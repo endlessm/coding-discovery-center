@@ -42,8 +42,11 @@
             <property name="vexpand">True</property>
             <property name="valign">fill</property>
             <child>
-              <object class="GtkFlowBox">
+              <object class="GtkFlowBox" id="discovery-menu">
                 <property name="visible">True</property>
+                <property name="homogeneous">True</property>
+                <property name="row-spacing">20</property>
+                <property name="column-spacing">20</property>
               </object>
               <packing>
                 <property name="name">menu</property>

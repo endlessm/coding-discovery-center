@@ -17,10 +17,116 @@ pkg.require({
 });
 
 const Gdk = imports.gi.Gdk;
+const GObject = imports.gi.GObject;
 const GLib = imports.gi.GLib;
 const Gtk = imports.gi.Gtk;
 
 const Lang = imports.lang;
+
+const LessonContent = [
+    {
+        name: 'Terminal',
+        subtitle: 'Dig into the system',
+        tags: ['poweruser', 'code', 'os', 'terminal'],
+        action: {
+            name: 'start-mission',
+            data: {
+                name: 'terminal'
+            }
+        }
+    },
+    {
+        name: 'Processing',
+        subtitle: 'Code can be beautiful',
+        tags: ['visual', 'code', 'processing'],
+        action: {
+            name: 'start-mission',
+            data: {
+                name: 'processing'
+            }
+        }
+    },
+    {
+        name: 'CodeView',
+        subtitle: 'Sneak behind the screen',
+        tags: ['javascript', 'code', 'os'],
+        action: {
+            name: 'start-mission',
+            data: {
+                name: 'codeview'
+            }
+        }
+    },
+    {
+        name: 'Python Console',
+        subtitle: 'Use Python in the Terminal',
+        tags: ['python', 'code', 'os', 'terminal'],
+        action: {
+            name: 'start-mission',
+            data: {
+                name: 'python-showmehow'
+            }
+        }
+    },
+    {
+        name: 'Python Functions',
+        subtitle: 'Write some functions and classes with Python',
+        tags: ['python', 'code', 'editor'],
+        action: {
+            name: 'start-mission',
+            data: {
+                name: 'python-functions'
+            }
+        }
+    },
+    {
+        name: 'Shell extensions',
+        subtitle: 'Customise your OS',
+        tags: ['shell', 'code', 'os'],
+        action: {
+            name: 'start-mission',
+            data: {
+                name: 'shell-extensions'
+            }
+        }
+    }
+];
+
+const Tags = [
+    {
+        title: 'Shell',
+        name: 'shell'
+    },
+    {
+        title: 'Code',
+        name: 'code'
+    },
+    {
+        title: 'Operating System',
+        name: 'os'
+    },
+    {
+        title: 'Editor',
+        name: 'editor'
+    },
+    {
+        title: 'Processing',
+        name: 'processing'
+    },
+    {
+        title: 'Python',
+        name: 'python'
+    },
+    {
+        title: 'Visual',
+        name: 'visual'
+    },
+    {
+        title: 'JavaScript',
+        name: 'javascript'
+    }
+];
+
 
 function load_style_sheet(resourcePath) {
     let provider = new Gtk.CssProvider();
@@ -30,10 +136,61 @@ function load_style_sheet(resourcePath) {
                                              Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
 }
 
+const DiscoveryMenuItem = new Lang.Class({
+    Name: 'DiscoveryMenuItem',
+    Extends: Gtk.Box,
+    Properties: {
+        title: GObject.ParamSpec.string('title',
+                                        '',
+                                        '',
+                                        GObject.ParamFlags.READWRITE |
+                                        GObject.ParamFlags.CONSTRUCT_ONLY,
+                                        ''),
+        subtitle: GObject.ParamSpec.string('subtitle',
+                                           '',
+                                           '',
+                                           GObject.ParamFlags.READWRITE |
+                                           GObject.ParamFlags.CONSTRUCT_ONLY,
+                                           ''),
+    },
+
+    _init: function(params, action, tags) {
+        params.width_request = 200;
+        params.height_request = 200;
+
+        this.parent(params);
+        this.action = action;
+        this.tags = tags;
+
+        let contentBox = new Gtk.Box({
+            visible: true,
+            halign: Gtk.Align.FILL,
+            valign: Gtk.Align.FILL,
+            orientation: Gtk.Orientation.VERTICAL
+        });
+        contentBox.add(new Gtk.Label({
+            visible: true,
+            label: this.title
+        }));
+        contentBox.add(new Gtk.Label({
+            visible: true,
+            label: this.subtitle
+        }));
+        this.add(contentBox);
+
+        this.get_style_context().add_class('menu-item');
+    }
+});
+
 const CodingDiscoveryCenterMainWindow = new Lang.Class({
     Name: 'CodingDiscoveryCenterMainWindow',
     Extends: Gtk.ApplicationWindow,
     Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/main.ui',
+    Children: [
+        'discovery-menu',
+        'content-views',
+        'tag-selection-bar'
+    ],
 
     _init: function(params) {
         this.parent(params);
@@ -44,6 +201,22 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
             show_close_button: true
         });
         this.set_titlebar(header);
+
+        LessonContent.forEach(Lang.bind(this, function(content) {
+            this.discovery_menu.add(new DiscoveryMenuItem({
+                visible: true,
+                title: content.name,
+                subtitle: content.subtitle,
+                valign: Gtk.Align.START,
+                halign: Gtk.Align.START
+            }, content.action, content.tags));
+        }));
+
+        Tags.forEach(Lang.bind(this, function(tag) {
+            this.tag_selection_bar.add(new Gtk.Button({
+                label: tag.title
+            }));
+        }));
     }
 });
 
