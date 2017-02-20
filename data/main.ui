@@ -4,13 +4,51 @@
   <template class="Gjs_CodingDiscoveryCenterMainWindow" parent="GtkApplicationWindow">
     <property name="can_focus">False</property>
     <property name="default-height">800</property>
+    <property name="default-width">1400</property>
     <child>
       <object class="GtkBox">
         <property name="visible">True</property>
         <property name="orientation">vertical</property>
+        <style>
+          <class name="app-chrome"/>
+        </style>
         <child>
           <object class="GtkBox">
             <property name="visible">True</property>
+            <style>
+              <class name="toolbar"/>
+            </style>
+            <child>
+              <object class="GtkSearchEntry">
+                <property name="visible">True</property>
+                <property name="placeholder-text">What do you want to learn?</property>
+                <property name="width-request">300</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkBox" id="tag-selection-bar">
+                <property name="visible">True</property>
+                <style>
+                  <class name="tag-selection"/>
+                </style>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="GtkStack" id="content-views">
+            <property name="visible">True</property>
+            <property name="hexpand">True</property>
+            <property name="vexpand">True</property>
+            <property name="valign">fill</property>
+            <child>
+              <object class="GtkFlowBox">
+                <property name="visible">True</property>
+              </object>
+              <packing>
+                <property name="name">menu</property>
+              </packing>
+            </child>
           </object>
         </child>
       </object>
