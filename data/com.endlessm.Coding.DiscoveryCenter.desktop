@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Name=Coding Discovery Center
+Comment=Discovery new things to do with Coding
+Type=Application
+Exec=com.endlessm.Coding.DiscoveryCenter
+Icon=coding-discovery-center
+Categories=Development;
+DBusActivatable=true
+StartupNotify=true
