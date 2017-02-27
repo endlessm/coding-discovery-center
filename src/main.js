@@ -18,10 +18,13 @@ pkg.require({
 
 const Gdk = imports.gi.Gdk;
 const GObject = imports.gi.GObject;
+const Gio = imports.gi.Gio;
 const GLib = imports.gi.GLib;
 const Gtk = imports.gi.Gtk;
 
 const Lang = imports.lang;
+
+const Service = imports.service;
 
 const LessonContent = [
     {
@@ -136,9 +139,18 @@ function load_style_sheet(resourcePath) {
                                              Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
 }
 
-const DiscoveryMenuItem = new Lang.Class({
-    Name: 'DiscoveryMenuItem',
-    Extends: Gtk.Box,
+// Each of these action dispatchers is always passed an object called 'services'
+// which contains a mapping of any relevant services (for instance gameService)
+// and data, which is per-action defined.
+const _ACTION_DISPATCH = {
+    'start-mission': function(services, data) {
+        services.gameService.startMission(data.name);
+    }
+};
+
+const DiscoveryMenuItemStore = new Lang.Class({
+    Name: 'DiscoveryMenuItemStore',
+    Extends: GObject.Object,
     Properties: {
         title: GObject.ParamSpec.string('title',
                                         '',
@@ -152,6 +164,54 @@ const DiscoveryMenuItem = new Lang.Class({
                                            GObject.ParamFlags.READWRITE |
                                            GObject.ParamFlags.CONSTRUCT_ONLY,
                                            ''),
+    },
+
+    _init: function(params, action, tags) {
+        this.parent(params);
+
+        this._action = action;
+        this._tags = tags;
+    },
+
+    performAction: function(services) {
+        return _ACTION_DISPATCH[this._action.name](services, this._action.data);
+    }
+});
+
+const DiscoveryMenuStore = new Lang.Class({
+    Name: 'DiscoveryMenuStore',
+    Extends: Gio.ListStore,
+
+    _init: function(params, menuItems) {
+        params.item_type = DiscoveryMenuItemStore.$gtype;
+
+        this.parent(params);
+
+        menuItems.forEach(Lang.bind(this, function(item) {
+            this.append(new DiscoveryMenuItemStore({
+                title: item.name,
+                subtitle: item.subtitle
+            }, item.action, item.tags));
+        }));
+    },
+
+    forEach: function(callback) {
+        for (let i = 0; i < this.get_n_items(); ++i) {
+            callback(this.get_item(i));
+        }
+    }
+});
+
+const DiscoveryMenuItemView = new Lang.Class({
+    Name: 'DiscoveryMenuItemView',
+    Extends: Gtk.Box,
+    Properties: {
+        model: GObject.ParamSpec.object('model',
+                                        '',
+                                        '',
+                                        GObject.ParamFlags.READWRITE |
+                                        GObject.ParamFlags.CONSTRUCT_ONLY,
+                                        DiscoveryMenuItemStore.$gtype)
     },
 
     _init: function(params, action, tags) {
@@ -170,11 +230,11 @@ const DiscoveryMenuItem = new Lang.Class({
         });
         contentBox.add(new Gtk.Label({
             visible: true,
-            label: this.title
+            label: this.model.title
         }));
         contentBox.add(new Gtk.Label({
             visible: true,
-            label: this.subtitle
+            label: this.model.subtitle
         }));
         this.add(contentBox);
 
@@ -191,6 +251,20 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
         'content-views',
         'tag-selection-bar'
     ],
+    Properties: {
+        discovery_menu_store: GObject.ParamSpec.object('discovery-menu-store',
+                                                       '',
+                                                       '',
+                                                       GObject.ParamFlags.READWRITE |
+                                                       GObject.ParamFlags.CONSTRUCT_ONLY,
+                                                       DiscoveryMenuStore.$gtype),
+        game_service: GObject.ParamSpec.object('game-service',
+                                               '',
+                                               '',
+                                               GObject.ParamFlags.READWRITE |
+                                               GObject.ParamFlags.CONSTRUCT_ONLY,
+                                               Service.GameService.$gtype)
+    },
 
     _init: function(params) {
         this.parent(params);
@@ -202,14 +276,20 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
         });
         this.set_titlebar(header);
 
-        LessonContent.forEach(Lang.bind(this, function(content) {
-            this.discovery_menu.add(new DiscoveryMenuItem({
+        // XXX: For some reason discovery_menu.bind_model doesn't seem to
+        // work. The callback gets invoked with null every time. Checked
+        // the bindings and there doesn't seem to be anything wrong there
+        // so either we are doing something wrong or there is a problem
+        // deep within Gjs.
+        //
+        // For now we don't care about model updates, so just use forEach
+        this.discovery_menu_store.forEach(Lang.bind(this, function(item) {
+            this.discovery_menu.add(new DiscoveryMenuItemView({
                 visible: true,
-                title: content.name,
-                subtitle: content.subtitle,
+                model: item,
                 valign: Gtk.Align.START,
                 halign: Gtk.Align.START
-            }, content.action, content.tags));
+            }));
         }));
 
         Tags.forEach(Lang.bind(this, function(tag) {
@@ -242,10 +322,14 @@ const CodingDiscoveryCenterApplication = new Lang.Class({
     },
 
     vfunc_activate: function() {
-        if (!this._mainWindow)
+        if (!this._mainWindow) {
+            let gameService = new Service.GameService({});
             this._mainWindow = new CodingDiscoveryCenterMainWindow({
-                application: this
+                application: this,
+                game_service: gameService,
+                discovery_menu_store: new DiscoveryMenuStore({}, LessonContent)
             });
+        }
 
         this._mainWindow.present();
     },
