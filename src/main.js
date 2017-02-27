@@ -297,6 +297,18 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
                 label: tag.title
             }));
         }));
+
+        this.discovery_menu.connect('child-activated', Lang.bind(this, function(box, child) {
+            // Look up the child in the model and perform its action
+            let index = child.get_index();
+            if (index === -1)
+                return;
+
+            let model_child = this.discovery_menu_store.get_item(index);
+            model_child.performAction({
+                gameService: this.game_service
+            });
+        }));
     }
 });
 
