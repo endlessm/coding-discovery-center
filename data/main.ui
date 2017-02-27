@@ -19,7 +19,7 @@
               <class name="toolbar"/>
             </style>
             <child>
-              <object class="GtkSearchEntry">
+              <object class="GtkSearchEntry" id="menu-search">
                 <property name="visible">True</property>
                 <property name="placeholder-text">What do you want to learn?</property>
                 <property name="width-request">300</property>

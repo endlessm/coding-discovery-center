@@ -181,6 +181,23 @@ const DiscoveryMenuItemStore = new Lang.Class({
         return tags.some(Lang.bind(this, function(tag) {
             return this._tags.indexOf(tag) !== -1;
         }));
+    },
+
+    matchesSearchTerm: function(searchTerm) {
+        let lowerSearchTerm = searchTerm.toLowerCase();
+        let tagMatchesSearchTerm = this._tags.some(Lang.bind(this, function(tag) {
+            return tag.indexOf(lowerSearchTerm) !== -1;
+        }));
+        let nameMatchesSearchTerm = (
+            this.title.indexOf(lowerSearchTerm) !== -1
+        );
+        let subtitleMatchesSearchTerm = (
+            this.subtitle.indexOf(lowerSearchTerm) !== -1
+        );
+
+        return (tagMatchesSearchTerm ||
+                nameMatchesSearchTerm ||
+                subtitleMatchesSearchTerm);
     }
 });
 
@@ -255,7 +272,8 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
     Children: [
         'discovery-menu',
         'content-views',
-        'tag-selection-bar'
+        'tag-selection-bar',
+        'menu-search'
     ],
     Properties: {
         discovery_menu_store: GObject.ParamSpec.object('discovery-menu-store',
@@ -326,6 +344,10 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
             this.tag_selection_bar.add(button);
         }));
 
+        this.menu_search.connect('search-changed', Lang.bind(this, function() {
+            this.discovery_menu.invalidate_filter();
+        }));
+
         this.discovery_menu.connect('child-activated', Lang.bind(this, function(box, child) {
             // Look up the child in the model and perform its action
             let index = child.get_index();
@@ -339,11 +361,12 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
         }));
 
         this.discovery_menu.set_filter_func(Lang.bind(this, function(child) {
+            let searchTextLength = this.menu_search.get_text_length();
             let tags = [...this._toggledTags];
 
             // Quick check - if we don't have any tags or a search term
             // we can just skip the check alltogether
-            if (!tags.length)
+            if (!tags.length && !searchTextLength)
                 return true;
 
             // Look up the child in the model. If we can't find it, then
@@ -355,13 +378,21 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
 
             let model_child = this.discovery_menu_store.get_item(index);
             let matches_tags = true;
+            let matches_search = true;
 
             // If we have tags, then check to see if the model_child
             // matches any
             if (tags.length)
                 matches_tags = model_child.matchesAnyOfProvidedTags(tags);
 
-            return matches_tags;
+            if (searchTextLength)
+                matches_search = model_child.matchesSearchTerm(
+                    this.menu_search.get_text()
+                );
+
+            // XXX: Not sure if this should be an AND or OR operation
+            // here (i.e do we expand or contract the list of results).
+            return matches_tags && matches_search;
         }));
     }
 });
