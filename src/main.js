@@ -293,9 +293,10 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
         }));
 
         Tags.forEach(Lang.bind(this, function(tag) {
-            this.tag_selection_bar.add(new Gtk.Button({
+            this.tag_selection_bar.add(new Gtk.ToggleButton({
                 label: tag.title,
-                visible: true
+                visible: true,
+                draw_indicator: true
             }));
         }));
 
