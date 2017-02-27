@@ -31,7 +31,7 @@ const LessonContent = [
         action: {
             name: 'start-mission',
             data: {
-                name: 'terminal'
+                name: 'terminalintro'
             }
         }
     },
@@ -53,7 +53,7 @@ const LessonContent = [
         action: {
             name: 'start-mission',
             data: {
-                name: 'codeview'
+                name: 'weather'
             }
         }
     },
@@ -64,7 +64,7 @@ const LessonContent = [
         action: {
             name: 'start-mission',
             data: {
-                name: 'python-showmehow'
+                name: 'python'
             }
         }
     },
@@ -75,7 +75,7 @@ const LessonContent = [
         action: {
             name: 'start-mission',
             data: {
-                name: 'python-functions'
+                name: 'python_functions'
             }
         }
     },
@@ -86,7 +86,7 @@ const LessonContent = [
         action: {
             name: 'start-mission',
             data: {
-                name: 'shell-extensions'
+                name: 'shellextension'
             }
         }
     }
