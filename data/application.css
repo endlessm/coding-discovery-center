@@ -6,6 +6,9 @@
   padding: 0px 10px;
 }
 
-.tag-selection {
-  padding: 0px 10px;
+.tag-selection button {
+  margin: 0 10px;
+  border: none;
+  background-image: none;
+  box-shadow: none;
 }
