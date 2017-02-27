@@ -175,6 +175,12 @@ const DiscoveryMenuItemStore = new Lang.Class({
 
     performAction: function(services) {
         return _ACTION_DISPATCH[this._action.name](services, this._action.data);
+    },
+
+    matchesAnyOfProvidedTags: function(tags) {
+        return tags.some(Lang.bind(this, function(tag) {
+            return this._tags.indexOf(tag) !== -1;
+        }));
     }
 });
 
@@ -280,7 +286,8 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
         // work. The callback gets invoked with null every time. Checked
         // the bindings and there doesn't seem to be anything wrong there
         // so either we are doing something wrong or there is a problem
-        // deep within Gjs.
+        // deep within Gjs. In any event, we want to use the filter func
+        // so we can't use bind_model anyway.
         //
         // For now we don't care about model updates, so just use forEach
         this.discovery_menu_store.forEach(Lang.bind(this, function(item) {
@@ -308,11 +315,11 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
             button.connect('toggled', Lang.bind(this, function() {
                 if (button.active) {
                     button.get_style_context().add_class('toggled');
-                    this._toggledTags.add(tag);
+                    this._toggledTags.add(tag.name);
                     this.discovery_menu.invalidate_filter();
                 } else {
                     button.get_style_context().remove_class('toggled');
-                    this._toggledTags.delete(tag);
+                    this._toggledTags.delete(tag.name);
                     this.discovery_menu.invalidate_filter();
                 }
             }));
@@ -329,6 +336,32 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
             model_child.performAction({
                 gameService: this.game_service
             });
+        }));
+
+        this.discovery_menu.set_filter_func(Lang.bind(this, function(child) {
+            let tags = [...this._toggledTags];
+
+            // Quick check - if we don't have any tags or a search term
+            // we can just skip the check alltogether
+            if (!tags.length)
+                return true;
+
+            // Look up the child in the model. If we can't find it, then
+            // return true, though I'm not entirely certain if this makes
+            // sense
+            let index = child.get_index();
+            if (index === -1)
+                return true;
+
+            let model_child = this.discovery_menu_store.get_item(index);
+            let matches_tags = true;
+
+            // If we have tags, then check to see if the model_child
+            // matches any
+            if (tags.length)
+                matches_tags = model_child.matchesAnyOfProvidedTags(tags);
+
+            return matches_tags;
         }));
     }
 });
