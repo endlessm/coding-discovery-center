@@ -292,12 +292,26 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
             }));
         }));
 
+        this._toggledTags = Set();  // eslint-disable-line no-undef
+
         Tags.forEach(Lang.bind(this, function(tag) {
-            this.tag_selection_bar.add(new Gtk.ToggleButton({
+            let button = new Gtk.ToggleButton({
                 label: tag.title,
                 visible: true,
                 draw_indicator: true
+            });
+            button.connect('toggled', Lang.bind(this, function() {
+                if (button.active) {
+                    button.get_style_context().add_class('toggled');
+                    this._toggledTags.add(tag);
+                    this.discovery_menu.invalidate_filter();
+                } else {
+                    button.get_style_context().remove_class('toggled');
+                    this._toggledTags.delete(tag);
+                    this.discovery_menu.invalidate_filter();
+                }
             }));
+            this.tag_selection_bar.add(button);
         }));
 
         this.discovery_menu.connect('child-activated', Lang.bind(this, function(box, child) {

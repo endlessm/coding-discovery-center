@@ -12,3 +12,10 @@
   background-image: none;
   box-shadow: none;
 }
+
+.tag-selection button.toggled {
+  margin: 0 10px;
+  border: 1px;
+  font-weight: bold;
+  background-color: #545459
+}
