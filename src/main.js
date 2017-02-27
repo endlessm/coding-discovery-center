@@ -300,6 +300,11 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
                 visible: true,
                 draw_indicator: true
             });
+
+            // Oddly enough, there isn't a default style class for when
+            // a button is toggled. There is the .toggle style class
+            // but this is added to every GtkToggleButton and not just
+            // active ones. As such we need to do it ourselves.
             button.connect('toggled', Lang.bind(this, function() {
                 if (button.active) {
                     button.get_style_context().add_class('toggled');
