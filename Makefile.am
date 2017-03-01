@@ -8,9 +8,6 @@ resource_DATA = \
 	src/com.endlessm.Coding.DiscoveryCenter.src.gresource \
 	$(NULL)
 
-resources_built_sources = \
-	DiscoveryCenter
-
 applicationsdir = $(datadir)/applications
 applications_DATA = data/com.endlessm.Coding.DiscoveryCenter.desktop
 
