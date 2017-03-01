@@ -1,5 +1,5 @@
 #!/bin/bash
-# Bootstrap script for Endless OS showmehow-service
+# Bootstrap script for Endless OS coding-discovery-center
 # Run this script on a clean source checkout to get ready for building.
 
 test -n "$srcdir" || srcdir=`dirname "$0"`
