@@ -51,7 +51,6 @@ src/com.endlessm.Coding.DiscoveryCenter: $(srcdir)/src/com.endlessm.Coding.Disco
 		-e "s|[@]pkgdatadir@|$(pkgdatadir)|g" \
 		$< > $@
 	chmod +x $@
-	echo $(app_resource_files)
 
 # Scripts to install
 bin_SCRIPTS = src/com.endlessm.Coding.DiscoveryCenter
