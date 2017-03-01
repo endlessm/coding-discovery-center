@@ -33,23 +33,22 @@ EXTRA_DIST = \
 	data/com.endlessm.Coding.DiscoveryCenter.desktop \
 	$(NULL)
 
-data/com.endlessm.Coding.DiscoveryCenter.data.gresource: $(srcdir)/data/com.endlessm.Coding.DiscoveryCenter.data.gresource.xml $(app_resource_files)
-	$(AM_V_GEN) mkdir -p data
-	$(AM_V_GEN) $(GLIB_COMPILE_RESOURCES) --target=$@ --sourcedir=$(srcdir)/data $<
+data/com.endlessm.Coding.DiscoveryCenter.data.gresource: $(srcdir)/data/com.endlessm.Coding.DiscoveryCenter.data.gresource.xml $(app_resource_files) Makefile
+	$(AM_V_GEN) mkdir -p data && \
+	$(GLIB_COMPILE_RESOURCES) --target=$@ --sourcedir=$(srcdir)/data $<
 
-src/com.endlessm.Coding.DiscoveryCenter.src.gresource: $(srcdir)/src/com.endlessm.Coding.DiscoveryCenter.src.gresource.xml $(resource_files)
-	$(AM_V_GEN) mkdir -p src
-	$(AM_V_GEN) $(GLIB_COMPILE_RESOURCES) --target=$@ --sourcedir=$(srcdir)/src $<
+src/com.endlessm.Coding.DiscoveryCenter.src.gresource: $(srcdir)/src/com.endlessm.Coding.DiscoveryCenter.src.gresource.xml $(resource_files) Makefile
+	$(AM_V_GEN) mkdir -p src && \
+	$(GLIB_COMPILE_RESOURCES) --target=$@ --sourcedir=$(srcdir)/src $<
 
-src/com.endlessm.Coding.DiscoveryCenter: $(srcdir)/src/com.endlessm.Coding.DiscoveryCenter.in
-	$(AM_V_GEN) mkdir -p src
-	$(AM_V_GEN) sed \
-		-e "s|[@]GJS@|$(GJS)|g" \
-		-e "s|[@]PACKAGE_VERSION@|$(PACKAGE_VERSION)|g" \
-		-e "s|[@]prefix@|$(prefix)|g" \
-		-e "s|[@]libdir@|$(libdir)|g" \
-		-e "s|[@]pkgdatadir@|$(pkgdatadir)|g" \
-		$< > $@
+src/com.endlessm.Coding.DiscoveryCenter: $(srcdir)/src/com.endlessm.Coding.DiscoveryCenter.in Makefile
+	$(AM_V_GEN) mkdir -p src && \
+	sed -e "s|[@]GJS@|$(GJS)|g" \
+	    -e "s|[@]PACKAGE_VERSION@|$(PACKAGE_VERSION)|g" \
+	    -e "s|[@]prefix@|$(prefix)|g" \
+	    -e "s|[@]libdir@|$(libdir)|g" \
+	    -e "s|[@]pkgdatadir@|$(pkgdatadir)|g" \
+	    $< > $@ && \
 	chmod +x $@
 
 # Scripts to install
