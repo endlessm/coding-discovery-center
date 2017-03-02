@@ -247,8 +247,6 @@ const DiscoveryMenuItemView = new Lang.Class({
 
         let contentBox = new Gtk.Box({
             visible: true,
-            halign: Gtk.Align.FILL,
-            valign: Gtk.Align.FILL,
             orientation: Gtk.Orientation.VERTICAL
         });
         contentBox.add(new Gtk.Label({
