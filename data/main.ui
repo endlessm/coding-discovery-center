@@ -19,7 +19,7 @@
               <class name="toolbar"/>
             </style>
             <child>
-              <object class="GtkSearchEntry" id="menu-search">
+              <object class="GtkSearchEntry" id="content-search">
                 <property name="visible">True</property>
                 <property name="placeholder-text">What do you want to learn?</property>
                 <property name="width-request">300</property>
@@ -42,14 +42,14 @@
             <property name="vexpand">True</property>
             <property name="valign">fill</property>
             <child>
-              <object class="GtkFlowBox" id="discovery-menu">
+              <object class="GtkFlowBox" id="discovery-content">
                 <property name="visible">True</property>
                 <property name="homogeneous">True</property>
                 <property name="row-spacing">20</property>
                 <property name="column-spacing">20</property>
               </object>
               <packing>
-                <property name="name">menu</property>
+                <property name="name">content</property>
               </packing>
             </child>
           </object>

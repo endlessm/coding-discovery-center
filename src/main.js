@@ -148,8 +148,8 @@ const _ACTION_DISPATCH = {
     }
 };
 
-const DiscoveryMenuItemStore = new Lang.Class({
-    Name: 'DiscoveryMenuItemStore',
+const DiscoveryContentItem = new Lang.Class({
+    Name: 'DiscoveryContentItem',
     Extends: GObject.Object,
     Properties: {
         title: GObject.ParamSpec.string('title',
@@ -201,17 +201,17 @@ const DiscoveryMenuItemStore = new Lang.Class({
     }
 });
 
-const DiscoveryMenuStore = new Lang.Class({
-    Name: 'DiscoveryMenuStore',
+const DiscoveryContentStore = new Lang.Class({
+    Name: 'DiscoveryContentStore',
     Extends: Gio.ListStore,
 
-    _init: function(params, menuItems) {
-        params.item_type = DiscoveryMenuItemStore.$gtype;
+    _init: function(params, contentItems) {
+        params.item_type = DiscoveryContentItem.$gtype;
 
         this.parent(params);
 
-        menuItems.forEach(Lang.bind(this, function(item) {
-            this.append(new DiscoveryMenuItemStore({
+        contentItems.forEach(Lang.bind(this, function(item) {
+            this.append(new DiscoveryContentItem({
                 title: item.name,
                 subtitle: item.subtitle
             }, item.action, item.tags));
@@ -225,8 +225,8 @@ const DiscoveryMenuStore = new Lang.Class({
     }
 });
 
-const DiscoveryMenuItemView = new Lang.Class({
-    Name: 'DiscoveryMenuItemView',
+const DiscoveryContentItemView = new Lang.Class({
+    Name: 'DiscoveryContentItemView',
     Extends: Gtk.FlowBoxChild,
     Properties: {
         model: GObject.ParamSpec.object('model',
@@ -234,7 +234,7 @@ const DiscoveryMenuItemView = new Lang.Class({
                                         '',
                                         GObject.ParamFlags.READWRITE |
                                         GObject.ParamFlags.CONSTRUCT_ONLY,
-                                        DiscoveryMenuItemStore.$gtype)
+                                        DiscoveryContentItem.$gtype)
     },
 
     _init: function(params, action, tags) {
@@ -259,7 +259,7 @@ const DiscoveryMenuItemView = new Lang.Class({
         }));
         this.add(contentBox);
 
-        this.get_style_context().add_class('menu-item');
+        this.get_style_context().add_class('content-item');
     }
 });
 
@@ -268,18 +268,18 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
     Extends: Gtk.ApplicationWindow,
     Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/main.ui',
     Children: [
-        'discovery-menu',
+        'discovery-content',
         'content-views',
         'tag-selection-bar',
-        'menu-search'
+        'content-search'
     ],
     Properties: {
-        discovery_menu_store: GObject.ParamSpec.object('discovery-menu-store',
-                                                       '',
-                                                       '',
-                                                       GObject.ParamFlags.READWRITE |
-                                                       GObject.ParamFlags.CONSTRUCT_ONLY,
-                                                       DiscoveryMenuStore.$gtype),
+        discovery_content_store: GObject.ParamSpec.object('discovery-content-store',
+                                                          '',
+                                                          '',
+                                                          GObject.ParamFlags.READWRITE |
+                                                          GObject.ParamFlags.CONSTRUCT_ONLY,
+                                                          DiscoveryContentStore.$gtype),
         game_service: GObject.ParamSpec.object('game-service',
                                                '',
                                                '',
@@ -298,7 +298,7 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
         });
         this.set_titlebar(header);
 
-        // XXX: For some reason discovery_menu.bind_model doesn't seem to
+        // XXX: For some reason discovery_content.bind_model doesn't seem to
         // work. The callback gets invoked with null every time. Checked
         // the bindings and there doesn't seem to be anything wrong there
         // so either we are doing something wrong or there is a problem
@@ -306,8 +306,8 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
         // so we can't use bind_model anyway.
         //
         // For now we don't care about model updates, so just use forEach
-        this.discovery_menu_store.forEach(Lang.bind(this, function(item) {
-            this.discovery_menu.add(new DiscoveryMenuItemView({
+        this.discovery_content_store.forEach(Lang.bind(this, function(item) {
+            this.discovery_content.add(new DiscoveryContentItemView({
                 visible: true,
                 model: item,
                 valign: Gtk.Align.START,
@@ -327,27 +327,27 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
             button.connect('toggled', Lang.bind(this, function() {
                 if (button.active) {
                     this._toggledTags.add(tag.name);
-                    this.discovery_menu.invalidate_filter();
+                    this.discovery_content.invalidate_filter();
                 } else {
                     this._toggledTags.delete(tag.name);
-                    this.discovery_menu.invalidate_filter();
+                    this.discovery_content.invalidate_filter();
                 }
             }));
             this.tag_selection_bar.add(button);
         }));
 
-        this.menu_search.connect('search-changed', Lang.bind(this, function() {
-            this.discovery_menu.invalidate_filter();
+        this.content_search.connect('search-changed', Lang.bind(this, function() {
+            this.discovery_content.invalidate_filter();
         }));
 
-        this.discovery_menu.connect('child-activated', Lang.bind(this, function(box, child) {
+        this.discovery_content.connect('child-activated', Lang.bind(this, function(box, child) {
             child.model.performAction({
                 gameService: this.game_service
             });
         }));
 
-        this.discovery_menu.set_filter_func(Lang.bind(this, function(child) {
-            let searchText = this.menu_search.get_text();
+        this.discovery_content.set_filter_func(Lang.bind(this, function(child) {
+            let searchText = this.content_search.get_text();
             let tags = [...this._toggledTags];
 
             // Quick check - if we don't have any tags or a search term
@@ -401,7 +401,7 @@ const CodingDiscoveryCenterApplication = new Lang.Class({
             this._mainWindow = new CodingDiscoveryCenterMainWindow({
                 application: this,
                 game_service: gameService,
-                discovery_menu_store: new DiscoveryMenuStore({}, LessonContent)
+                discovery_content_store: new DiscoveryContentStore({}, LessonContent)
             });
         }
 
