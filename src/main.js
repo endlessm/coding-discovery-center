@@ -349,12 +349,12 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
         }));
 
         this.discovery_menu.set_filter_func(Lang.bind(this, function(child) {
-            let searchTextLength = this.menu_search.get_text_length();
+            let searchText = this.menu_search.get_text();
             let tags = [...this._toggledTags];
 
             // Quick check - if we don't have any tags or a search term
             // we can just skip the check alltogether
-            if (!tags.length && !searchTextLength)
+            if (!tags.length && !searchText)
                 return true;
 
             let model_child = child.model;
@@ -366,10 +366,8 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
             if (tags.length)
                 matches_tags = model_child.matchesAnyOfProvidedTags(tags);
 
-            if (searchTextLength)
-                matches_search = model_child.matchesSearchTerm(
-                    this.menu_search.get_text()
-                );
+            if (searchText)
+                matches_search = model_child.matchesSearchTerm(searchText);
 
             // XXX: Not sure if this should be an AND or OR operation
             // here (i.e do we expand or contract the list of results).
