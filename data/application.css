@@ -13,7 +13,7 @@
   box-shadow: none;
 }
 
-.tag-selection button.toggled {
+.tag-selection button:checked {
   margin: 0 10px;
   border: 1px;
   font-weight: bold;
