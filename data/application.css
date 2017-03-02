@@ -1,0 +1,21 @@
+.app-chrome {
+  padding: 15px;
+}
+
+.toolbar {
+  margin: 10px 0;
+}
+
+.tag-selection button {
+  margin: 0 10px;
+  border: none;
+  background-image: none;
+  box-shadow: none;
+}
+
+.tag-selection button:checked {
+  margin: 0 10px;
+  border: 1px;
+  font-weight: bold;
+  background-color: #545459
+}
