@@ -430,16 +430,6 @@ const CodingDiscoveryCenterApplication = new Lang.Class({
 
         this._mainWindow.present();
     },
-
-    vfunc_dbus_register: function(conn, object_path) {
-        this.parent(conn, object_path);
-
-        return true;
-    },
-
-    vfunc_dbus_unregister: function(conn, object_path) {
-        this.parent(conn, object_path);
-    },
 });
 
 
