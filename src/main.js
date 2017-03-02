@@ -227,7 +227,7 @@ const DiscoveryMenuStore = new Lang.Class({
 
 const DiscoveryMenuItemView = new Lang.Class({
     Name: 'DiscoveryMenuItemView',
-    Extends: Gtk.Box,
+    Extends: Gtk.FlowBoxChild,
     Properties: {
         model: GObject.ParamSpec.object('model',
                                         '',
@@ -343,13 +343,7 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
         }));
 
         this.discovery_menu.connect('child-activated', Lang.bind(this, function(box, child) {
-            // Look up the child in the model and perform its action
-            let index = child.get_index();
-            if (index === -1)
-                return;
-
-            let model_child = this.discovery_menu_store.get_item(index);
-            model_child.performAction({
+            child.model.performAction({
                 gameService: this.game_service
             });
         }));
@@ -363,14 +357,7 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
             if (!tags.length && !searchTextLength)
                 return true;
 
-            // Look up the child in the model. If we can't find it, then
-            // return true, though I'm not entirely certain if this makes
-            // sense
-            let index = child.get_index();
-            if (index === -1)
-                return true;
-
-            let model_child = this.discovery_menu_store.get_item(index);
+            let model_child = child.model;
             let matches_tags = true;
             let matches_search = true;
 
