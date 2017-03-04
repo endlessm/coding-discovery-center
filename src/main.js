@@ -663,6 +663,20 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
             state: searchState
         });
 
+        // Currently the way this works is that we show the search screen
+        // unless we have no currently active search term, at which point
+        // we go back to the home page.
+        //
+        // Perhaps in a future iteration we could have a more explicit
+        // interaction here.
+        searchState.connect('updated', Lang.bind(this, function() {
+            if (searchState.active) {
+                this.content_views.set_visible_child_name('search');
+            } else {
+                this.content_views.set_visible_child_name('home');
+            }
+        }));
+
         this.content_search_box.add(searchBar);
         this.search_results_box.add(new DiscoveryCenterSearchResultsPage({
             visible: true,
