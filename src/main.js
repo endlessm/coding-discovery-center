@@ -283,12 +283,60 @@ const DiscoveryContentItemView = new Lang.Class({
     }
 });
 
+const DiscoveryContentFlowBox = new Lang.Class({
+    Name: 'DiscoveryContentFlowBox',
+    Extends: Gtk.FlowBox,
+    Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/discovery-content-flow-box.ui',
+    Properties: {
+        store: GObject.ParamSpec.object('store',
+                                        '',
+                                        '',
+                                        GObject.ParamFlags.READWRITE |
+                                        GObject.ParamFlags.CONSTRUCT_ONLY,
+                                        DiscoveryContentStore.$gtype)
+    },
+
+    _init: function(params) {
+        this.parent(params);
+
+        // XXX: For some reason discovery_content.bind_model doesn't seem to
+        // work. The callback gets invoked with null every time. Checked
+        // the bindings and there doesn't seem to be anything wrong there
+        // so either we are doing something wrong or there is a problem
+        // deep within Gjs. In any event, we want to use the filter func
+        // so we can't use bind_model anyway.
+        //
+        // For now we don't care about model updates, so just use forEach
+        this.store.forEach(Lang.bind(this, function(item) {
+            this.add(new DiscoveryContentItemView({
+                visible: true,
+                model: item
+            }));
+        }));
+
+        this._filterCallback = null;
+
+        this.set_filter_func(Lang.bind(this, function(child) {
+            if (this._filterCallback) {
+                return this._filterCallback(child);
+            }
+
+            return true;
+        }));
+    },
+
+    refilter: function(filterCallback) {
+        this._filterCallback = filterCallback;
+        this.invalidate_filter();
+    }
+});
+
 const CodingDiscoveryCenterMainWindow = new Lang.Class({
     Name: 'CodingDiscoveryCenterMainWindow',
     Extends: Gtk.ApplicationWindow,
     Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/main.ui',
     Children: [
-        'discovery-content',
+        'discovery-content-box',
         'content-views',
         'tag-selection-bar',
         'content-search'
@@ -308,6 +356,36 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
                                                Service.GameService.$gtype)
     },
 
+    // This callback is called when we need to update the items in
+    // the underlying flow box on this view. It is a member function
+    // since there is a substantial amount of internal state that
+    // we need to access.
+    _filterItems: function(child) {
+        let searchText = this.content_search.get_text();
+        let tags = [...this._toggledTags];
+
+        // Quick check - if we don't have any tags or a search term
+        // we can just skip the check alltogether
+        if (!tags.length && !searchText)
+            return true;
+
+        let model_child = child.model;
+        let matches_tags = true;
+        let matches_search = true;
+
+        // If we have tags, then check to see if the model_child
+        // matches any
+        if (tags.length)
+            matches_tags = model_child.matchesAnyOfProvidedTags(tags);
+
+        if (searchText)
+            matches_search = model_child.matchesSearchTerm(searchText);
+
+        // XXX: Not sure if this should be an AND or OR operation
+        // here (i.e do we expand or contract the list of results).
+        return matches_tags && matches_search;
+    },
+
     _init: function(params) {
         this.parent(params);
 
@@ -317,23 +395,6 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
             show_close_button: true
         });
         this.set_titlebar(header);
-
-        // XXX: For some reason discovery_content.bind_model doesn't seem to
-        // work. The callback gets invoked with null every time. Checked
-        // the bindings and there doesn't seem to be anything wrong there
-        // so either we are doing something wrong or there is a problem
-        // deep within Gjs. In any event, we want to use the filter func
-        // so we can't use bind_model anyway.
-        //
-        // For now we don't care about model updates, so just use forEach
-        this.discovery_content_store.forEach(Lang.bind(this, function(item) {
-            this.discovery_content.add(new DiscoveryContentItemView({
-                visible: true,
-                model: item,
-                valign: Gtk.Align.START,
-                halign: Gtk.Align.START
-            }));
-        }));
 
         this._toggledTags = Set();  // eslint-disable-line no-undef
 
@@ -347,49 +408,29 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
             button.connect('toggled', Lang.bind(this, function() {
                 if (button.active) {
                     this._toggledTags.add(tag.name);
-                    this.discovery_content.invalidate_filter();
+                    this._discoveryContent.refilter(Lang.bind(this, this._filterItems));
                 } else {
                     this._toggledTags.delete(tag.name);
-                    this.discovery_content.invalidate_filter();
+                    this._discoveryContent.refilter(Lang.bind(this, this._filterItems));
                 }
             }));
             this.tag_selection_bar.add(button);
         }));
 
+        this._discoveryContent = new DiscoveryContentFlowBox({
+            visible: true,
+            store: this.discovery_content_store
+        });
+        this.discovery_content_box.add(this._discoveryContent);
+
         this.content_search.connect('search-changed', Lang.bind(this, function() {
-            this.discovery_content.invalidate_filter();
+            this._discoveryContent.refilter(Lang.bind(this, this._filterItems));
         }));
 
-        this.discovery_content.connect('child-activated', Lang.bind(this, function(box, child) {
+        this._discoveryContent.connect('child-activated', Lang.bind(this, function(box, child) {
             child.model.performAction({
                 gameService: this.game_service
             });
-        }));
-
-        this.discovery_content.set_filter_func(Lang.bind(this, function(child) {
-            let searchText = this.content_search.get_text();
-            let tags = [...this._toggledTags];
-
-            // Quick check - if we don't have any tags or a search term
-            // we can just skip the check alltogether
-            if (!tags.length && !searchText)
-                return true;
-
-            let model_child = child.model;
-            let matches_tags = true;
-            let matches_search = true;
-
-            // If we have tags, then check to see if the model_child
-            // matches any
-            if (tags.length)
-                matches_tags = model_child.matchesAnyOfProvidedTags(tags);
-
-            if (searchText)
-                matches_search = model_child.matchesSearchTerm(searchText);
-
-            // XXX: Not sure if this should be an AND or OR operation
-            // here (i.e do we expand or contract the list of results).
-            return matches_tags && matches_search;
         }));
     }
 });

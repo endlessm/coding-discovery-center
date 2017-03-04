@@ -3,6 +3,7 @@
   <gresource prefix="/com/endlessm/Coding/DiscoveryCenter">
     <file preprocess="xml-stripblanks">main.ui</file>
     <file preprocess="xml-stripblanks">discovery-content-item-view.ui</file>
+    <file preprocess="xml-stripblanks">discovery-content-flow-box.ui</file>
     <file>application.css</file>
   </gresource>
 </gresources>

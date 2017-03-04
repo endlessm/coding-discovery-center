@@ -45,13 +45,12 @@
               <object class="GtkScrolledWindow">
                 <property name="visible">True</property>
                 <child>
-                  <object class="GtkFlowBox" id="discovery-content">
+                  <object class="GtkBox" id="discovery-content-box">
                     <property name="visible">True</property>
-                    <property name="homogeneous">True</property>
-                    <property name="row-spacing">20</property>
-                    <property name="column-spacing">20</property>
-                    <property name="halign">center</property>
-                    <property name="valign">start</property>
+                    <property name="vexpand">True</property>
+                    <property name="valign">fill</property>
+                    <property name="hexpand">True</property>
+                    <property name="halign">fill</property>
                   </object>
                 </child>
               </object>
