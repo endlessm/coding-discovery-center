@@ -101,6 +101,52 @@ const _LessonContent = [
     }
 ];
 
+const _Categories = [
+    {
+        name: 'Python',
+        subtitle: 'The Python Programming Language',
+        tags: ['python'],
+        id: 'category::python',
+        rows: [
+            {
+                title: 'Python Basics',
+                children: [
+                    'showmehow::python',
+                    'chatbox::python::functions'
+                ]
+            }
+        ]
+    },
+    {
+        name: 'Endless OS',
+        subtitle: 'Everything about Endless OS',
+        id: 'category::eos',
+        tags: ['os'],
+        rows: [
+            {
+                title: 'Make things with Code',
+                children: [
+                    'chatbox::codeview'
+                ]
+            }
+        ]
+    },
+    {
+        name: 'GNOME',
+        subtitle: 'The GNOME Platform',
+        id: 'category::gnome',
+        tags: ['code'],
+        rows: [
+            {
+                title: 'GNOME Core',
+                children: [
+                    'showmehow::terminal'
+                ]
+            }
+        ]
+    }
+];
+
 // Takes a list with each object-value having some key idKey
 // which uniquely identifies this element and then turns it into
 // a map that can be used for O(1) access.
@@ -113,6 +159,7 @@ function _toFastLookupMap(list, idKey) {
 }
 
 const LessonContent = _toFastLookupMap(_LessonContent, 'id');
+const Categories = _toFastLookupMap(_Categories, 'id');
 
 const Tags = [
     {
