@@ -149,6 +149,25 @@ const Tags = [
     }
 ];
 
+function warnUnableToStartLesson(reason) {
+    let dialog = new Gtk.MessageDialog({
+        text: 'Unable to start this lesson',
+        secondary_text: reason,
+        buttons: Gtk.ButtonsType.OK
+    });
+    dialog.connect('response', function() {
+        dialog.destroy();
+    });
+    dialog.show();
+}
+
+function FailedToLaunchError(message) {
+    this.name = 'FailedToLaunchError';
+    this.message = message;
+    return this;
+}
+FailedToLaunchError.prototype = Error.prototype;
+
 const DiscoveryCenterServicesBundle = new Lang.Class({
     Name: 'DiscoveryCenterServicesBundle',
     Extends: GObject.Object,
@@ -407,7 +426,16 @@ const DiscoveryContentRow = new Lang.Class({
         });
 
         flowBox.connect('child-activated', Lang.bind(this, function(box, child) {
-            child.model.performAction(this.services);
+            try {
+                child.model.performAction(this.services);
+            } catch (e) {
+                if (e instanceof FailedToLaunchError) {
+                    warnUnableToStartLesson(e.message);
+                    return
+                }
+
+                throw e;
+            }
         }));
 
         this.title_label.label = this.title;
