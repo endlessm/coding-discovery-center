@@ -249,6 +249,12 @@ const DiscoveryContentItemView = new Lang.Class({
                                         GObject.ParamFlags.CONSTRUCT_ONLY,
                                         DiscoveryContentItem.$gtype)
     },
+    Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/discovery-content-item-view.ui',
+    Children: [
+        'background-content',
+        'item-title',
+        'item-subtitle'
+    ],
 
     _init: function(params, action, tags) {
         params.width_request = 200;
@@ -258,71 +264,20 @@ const DiscoveryContentItemView = new Lang.Class({
         this.action = action;
         this.tags = tags;
 
-        let contentOverlay = new Gtk.Overlay({
-            visible: true
-        });
-
-        let contentBox = new Gtk.Box({
-            width_request: 200,
-            height_request: 200,
-            visible: true
-        });
-
         let colorIndex = Math.floor((Math.random() * 10) % AVAILABLE_COLORS.length);
 
         let contentBackgroundProvider = new Gtk.CssProvider();
-        let contentBackgroundStyleContext = contentBox.get_style_context();
+        let contentBackgroundStyleContext = this.background_content.get_style_context();
         let [className, backgroundCss] = CSSAllocator({
             background_color: AVAILABLE_COLORS[colorIndex]
         });
         contentBackgroundProvider.load_from_data(backgroundCss);
         contentBackgroundStyleContext.add_class(className);
-        contentBackgroundStyleContext.add_class('background-box');
         contentBackgroundStyleContext.add_provider(contentBackgroundProvider,
                                       Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
 
-        let contentOverlayBox = new Gtk.Box({
-            visible: true,
-            orientation: Gtk.Orientation.VERTICAL
-        });
-        contentOverlayBox.get_style_context().add_class('overlay-contents');
-
-        let contentOverlayLabelsBox = new Gtk.Box({
-            visible: true,
-            orientation: Gtk.Orientation.VERTICAL,
-            vexpand: true,
-            hexpand: true,
-            valign: Gtk.Align.END
-        });
-        let itemTitleLabel = new Gtk.Label({
-            visible: true,
-            label: this.model.title,
-            max_width_chars: 12,
-            hexpand: false,
-            halign: Gtk.Align.START,
-            xalign: 0
-        });
-        let itemSubtitleLabel = new Gtk.Label({
-            visible: true,
-            label: this.model.subtitle,
-            max_width_chars: 40,
-            wrap: true,
-            hexpand: false,
-            halign: Gtk.Align.START,
-            xalign: 0
-        });
-        itemTitleLabel.get_style_context().add_class('title');
-        itemSubtitleLabel.get_style_context().add_class('subtitle');
-
-        contentOverlayLabelsBox.add(itemTitleLabel);
-        contentOverlayLabelsBox.add(itemSubtitleLabel);
-
-        contentOverlayBox.add(contentOverlayLabelsBox);
-
-        contentOverlay.add(contentBox);
-        contentOverlay.add_overlay(contentOverlayBox);
-
-        this.add(contentOverlay);
+        this.item_title.label = this.model.title;
+        this.item_subtitle.label = this.model.title;
 
         this.get_style_context().add_class('content-item');
     }
