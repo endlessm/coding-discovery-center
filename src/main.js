@@ -580,7 +580,7 @@ const DiscoveryCenterSearchState = new Lang.Class({
     _init: function(params) {
         this.parent(params);
         this._toggledTags = Set();  // eslint-disable-line no-undef
-        this._searchText = "";
+        this._searchText = '';
     },
 
     addTag: function(tag) {
@@ -716,34 +716,34 @@ const DiscoveryCenterSearchResultsPage = new Lang.Class({
 });
 
 const HOME_PAGE_CONTENT = {
-    "rows": [
+    'rows': [
         {
-            "title": "Categories",
-            "children": [
-                "category::gnome",
-                "category::eos",
-                "category::python"
+            'title': 'Categories',
+            'children': [
+                'category::gnome',
+                'category::eos',
+                'category::python'
             ]
         },
         {
-            "title": "Tutorials",
-            "children": [
-                "showmehow::terminal",
-                "chatbox::processing",
-                "showmehow::python"
+            'title': 'Tutorials',
+            'children': [
+                'showmehow::terminal',
+                'chatbox::processing',
+                'showmehow::python'
             ]
         },
         {
-            "title": "Examples",
-            "children": [
-                "chatbox::python::functions",
-                "chatbox::shell::extensions"
+            'title': 'Examples',
+            'children': [
+                'chatbox::python::functions',
+                'chatbox::shell::extensions'
             ]
         },
         {
-            "title": "Templates",
-            "children": [
-                "chatbox::codeview"
+            'title': 'Templates',
+            'children': [
+                'chatbox::codeview'
             ]
         }
     ]
@@ -924,7 +924,7 @@ const CodingDiscoveryCenterApplication = new Lang.Class({
         this._mainWindow = null;
 
         this.parent({ application_id: pkg.name });
-        GLib.set_application_name(_("Coding Discovery Center"));
+        GLib.set_application_name(_('Coding Discovery Center'));
     },
 
     vfunc_startup: function() {
