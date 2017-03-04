@@ -441,7 +441,7 @@ const DiscoveryContentRow = new Lang.Class({
             } catch (e) {
                 if (e instanceof FailedToLaunchError) {
                     warnUnableToStartLesson(e.message);
-                    return
+                    return;
                 }
 
                 throw e;
