@@ -364,6 +364,7 @@ const DiscoveryContentFlowBox = new Lang.Class({
     },
 
     _init: function(params) {
+        params.activate_on_single_click = false;
         this.parent(params);
 
         // XXX: For some reason discovery_content.bind_model doesn't seem to
