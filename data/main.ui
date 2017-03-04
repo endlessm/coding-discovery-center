@@ -42,13 +42,18 @@
             <property name="vexpand">True</property>
             <property name="valign">fill</property>
             <child>
-              <object class="GtkFlowBox" id="discovery-content">
+              <object class="GtkScrolledWindow">
                 <property name="visible">True</property>
-                <property name="homogeneous">True</property>
-                <property name="row-spacing">20</property>
-                <property name="column-spacing">20</property>
-                <property name="halign">center</property>
-                <property name="valign">start</property>
+                <child>
+                  <object class="GtkFlowBox" id="discovery-content">
+                    <property name="visible">True</property>
+                    <property name="homogeneous">True</property>
+                    <property name="row-spacing">20</property>
+                    <property name="column-spacing">20</property>
+                    <property name="halign">center</property>
+                    <property name="valign">start</property>
+                  </object>
+                </child>
               </object>
               <packing>
                 <property name="name">content</property>
