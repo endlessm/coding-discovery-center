@@ -358,13 +358,13 @@ const DiscoveryContentItem = new Lang.Class({
     matchesSearchTerm: function(searchTerm) {
         let lowerSearchTerm = searchTerm.toLowerCase();
         let tagMatchesSearchTerm = this._tags.some(Lang.bind(this, function(tag) {
-            return tag.indexOf(lowerSearchTerm) !== -1;
+            return tag.toLowerCase().indexOf(lowerSearchTerm) !== -1;
         }));
         let nameMatchesSearchTerm = (
-            this.title.indexOf(lowerSearchTerm) !== -1
+            this.title.toLowerCase().indexOf(lowerSearchTerm) !== -1
         );
         let subtitleMatchesSearchTerm = (
-            this.subtitle.indexOf(lowerSearchTerm) !== -1
+            this.subtitle.toLowerCase().indexOf(lowerSearchTerm) !== -1
         );
 
         return (tagMatchesSearchTerm ||
