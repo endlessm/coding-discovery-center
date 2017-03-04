@@ -26,11 +26,12 @@ const Lang = imports.lang;
 
 const Service = imports.service;
 
-const LessonContent = [
+const _LessonContent = [
     {
         name: 'Terminal',
         subtitle: 'Dig into the system',
         tags: ['poweruser', 'code', 'os', 'terminal'],
+        id: 'showmehow::terminal',
         action: {
             name: 'start-mission',
             data: {
@@ -42,6 +43,7 @@ const LessonContent = [
         name: 'Processing',
         subtitle: 'Code can be beautiful',
         tags: ['visual', 'code', 'processing'],
+        id: 'chatbox::processing',
         action: {
             name: 'start-mission',
             data: {
@@ -53,6 +55,7 @@ const LessonContent = [
         name: 'CodeView',
         subtitle: 'Sneak behind the screen',
         tags: ['javascript', 'code', 'os'],
+        id: 'chatbox::codeview',
         action: {
             name: 'start-mission',
             data: {
@@ -64,6 +67,7 @@ const LessonContent = [
         name: 'Python Console',
         subtitle: 'Use Python in the Terminal',
         tags: ['python', 'code', 'os', 'terminal'],
+        id: 'showmehow::python',
         action: {
             name: 'start-mission',
             data: {
@@ -75,6 +79,7 @@ const LessonContent = [
         name: 'Python Functions',
         subtitle: 'Write some functions and classes with Python',
         tags: ['python', 'code', 'editor'],
+        id: 'chatbox::python::functions',
         action: {
             name: 'start-mission',
             data: {
@@ -86,6 +91,7 @@ const LessonContent = [
         name: 'Shell extensions',
         subtitle: 'Customise your OS',
         tags: ['shell', 'code', 'os'],
+        id: 'chatbox::shell::extensions',
         action: {
             name: 'start-mission',
             data: {
@@ -94,6 +100,19 @@ const LessonContent = [
         }
     }
 ];
+
+// Takes a list with each object-value having some key idKey
+// which uniquely identifies this element and then turns it into
+// a map that can be used for O(1) access.
+function _toFastLookupMap(list, idKey) {
+    let map = {};
+    list.forEach(function(element) {
+        map[element[idKey]] = element;
+    });
+    return map;
+}
+
+const LessonContent = _toFastLookupMap(_LessonContent, 'id');
 
 const Tags = [
     {
@@ -462,7 +481,9 @@ const CodingDiscoveryCenterApplication = new Lang.Class({
             this._mainWindow = new CodingDiscoveryCenterMainWindow({
                 application: this,
                 game_service: gameService,
-                discovery_content_store: new DiscoveryContentStore({}, LessonContent)
+                discovery_content_store: new DiscoveryContentStore(
+                    {}, Object.keys(LessonContent).map(k => LessonContent[k])
+                )
             });
         }
 
