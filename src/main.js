@@ -98,15 +98,58 @@ const _LessonContent = [
                 name: 'shellextension'
             }
         }
+    },
+    {
+        name: 'Python',
+        subtitle: 'The Python Programming Language',
+        tags: ['shell', 'code', 'os'],
+        id: 'category::python',
+        action: {
+            name: 'switch-category',
+            data: {
+                name: 'python'
+            }
+        }
+    },
+    {
+        name: 'Endless OS',
+        subtitle: 'Endless OS',
+        tags: ['code', 'os'],
+        id: 'category::eos',
+        action: {
+            name: 'switch-category',
+            data: {
+                name: 'eos'
+            }
+        }
+    },
+    {
+        name: 'GNOME',
+        subtitle: 'The GNOME Platform',
+        tags: ['code'],
+        id: 'category::gnome',
+        action: {
+            name: 'switch-category',
+            data: {
+                name: 'gnome'
+            }
+        }
     }
 ];
 
 const _Categories = [
     {
+        name: 'None',
+        subtitle: 'If you see this page, it is an error',
+        tags: [],
+        id: 'none',
+        rows: []
+    },
+    {
         name: 'Python',
         subtitle: 'The Python Programming Language',
         tags: ['python'],
-        id: 'category::python',
+        id: 'python',
         rows: [
             {
                 title: 'Python Basics',
@@ -120,7 +163,7 @@ const _Categories = [
     {
         name: 'Endless OS',
         subtitle: 'Everything about Endless OS',
-        id: 'category::eos',
+        id: 'eos',
         tags: ['os'],
         rows: [
             {
@@ -134,7 +177,7 @@ const _Categories = [
     {
         name: 'GNOME',
         subtitle: 'The GNOME Platform',
-        id: 'category::gnome',
+        id: 'gnome',
         tags: ['code'],
         rows: [
             {
@@ -224,7 +267,13 @@ const DiscoveryCenterServicesBundle = new Lang.Class({
                                        '',
                                        GObject.ParamFlags.READWRITE |
                                        GObject.ParamFlags.CONSTRUCT_ONLY,
-                                       Service.GameService.$gtype)
+                                       Service.GameService.$gtype),
+        application: GObject.ParamSpec.object('application',
+                                              '',
+                                              '',
+                                              GObject.ParamFlags.READWRITE |
+                                              GObject.ParamFlags.CONSTRUCT_ONLY,
+                                              Gio.Application)
     },
 
     _init: function(params) {
@@ -242,6 +291,12 @@ const DiscoveryCenterServicesBundle = new Lang.Class({
         }
 
         throw new FailedToLaunchError('ChatBox is not installed. Install it from Software');
+    },
+
+    switchCategory: function(name) {
+        // Switch the currently active category on the app.
+        this.application.activate_action('switch-category',
+                                         GLib.Variant.new('s', name));
     }
 });
 
@@ -259,6 +314,9 @@ function load_style_sheet(resourcePath) {
 const _ACTION_DISPATCH = {
     'start-mission': function(services, data) {
         services.startChatboxMission(data.name);
+    },
+    'switch-category': function(services, data) {
+        services.switchCategory(data.name);
     }
 };
 
@@ -660,6 +718,14 @@ const DiscoveryCenterSearchResultsPage = new Lang.Class({
 const HOME_PAGE_CONTENT = {
     "rows": [
         {
+            "title": "Categories",
+            "children": [
+                "category::gnome",
+                "category::eos",
+                "category::python"
+            ]
+        },
+        {
             "title": "Tutorials",
             "children": [
                 "showmehow::terminal",
@@ -682,6 +748,62 @@ const HOME_PAGE_CONTENT = {
         }
     ]
 };
+
+const DiscoveryCenterCategoryPage = new Lang.Class({
+    Name: 'DiscoveryCenterCategoryPage',
+    Extends: Gtk.Box,
+    Properties: {
+        services: GObject.ParamSpec.object('services',
+                                           '',
+                                           '',
+                                           GObject.ParamFlags.READWRITE |
+                                           GObject.ParamFlags.CONSTRUCT_ONLY,
+                                           DiscoveryCenterServicesBundle.$gtype),
+        category: GObject.ParamSpec.string('category',
+                                           '',
+                                           '',
+                                           GObject.ParamFlags.READABLE,
+                                           'none')
+    },
+    Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/discovery-center-category-page.ui',
+    Children: [
+        'rows'
+    ],
+
+    get category() {
+        return this._category;
+    },
+
+    _init: function(params) {
+        this.parent(params);
+        this.changeCategory('none');
+    },
+
+    changeCategory: function(category) {
+        if (Object.keys(Categories).indexOf(category) === -1) {
+            throw new Error('Category ' + category + ' does not exist');
+        }
+
+        this._category = category;
+
+        // First, drop all the existing content
+        this.rows.get_children().forEach(function(child) {
+            child.destroy();
+        });
+
+        // Now go through all the rows in this category and add
+        // them again.
+        let categoryContent = Categories[this._category];
+        categoryContent.rows.forEach(Lang.bind(this, function(row) {
+            let contentRow = new DiscoveryContentRow({
+                services: this.services,
+                title: row.title
+            }, row.children);
+
+            this.rows.add(contentRow);
+        }));
+    }
+});
 
 const DiscoveryCenterHomePage = new Lang.Class({
     Name: 'DiscoveryCenterHomePage',
@@ -721,6 +843,7 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
         'content-views',
         'content-search-box',
         'search-results-box',
+        'category-box',
         'home-page-box'
     ],
     Properties: {
@@ -762,6 +885,19 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
             }
         }));
 
+        // Add a 'switch-category' action to the application
+        // which we will connect to and use to switch categories.
+        let switchCategoryAction = new Gio.SimpleAction({
+            name: 'switch-category',
+            parameter_type: new GLib.VariantType('s')
+        });
+        switchCategoryAction.connect('activate', Lang.bind(this, function(action, parameter) {
+            let page = this.content_views.get_child_by_name('category').get_children()[0];
+            page.changeCategory(parameter.unpack());
+            this.content_views.set_visible_child_name('category');
+        }));
+        this.application.add_action(switchCategoryAction);
+
         this.content_search_box.add(searchBar);
         this.search_results_box.add(new DiscoveryCenterSearchResultsPage({
             visible: true,
@@ -769,6 +905,10 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
             services: this.services
         }));
         this.home_page_box.add(new DiscoveryCenterHomePage({
+            visible: true,
+            services: this.services
+        }));
+        this.category_box.add(new DiscoveryCenterCategoryPage({
             visible: true,
             services: this.services
         }));
@@ -799,7 +939,8 @@ const CodingDiscoveryCenterApplication = new Lang.Class({
     vfunc_activate: function() {
         if (!this._mainWindow) {
             let servicesBundle = new DiscoveryCenterServicesBundle({
-                game: new Service.GameService({})
+                game: new Service.GameService({}),
+                application: this
             });
             this._mainWindow = new CodingDiscoveryCenterMainWindow({
                 application: this,
