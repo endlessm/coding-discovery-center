@@ -185,7 +185,16 @@ const DiscoveryCenterServicesBundle = new Lang.Class({
     },
 
     startChatboxMission: function(name) {
-        this.game.startMission(name);
+        // Launch the chatbox app, and then fire the start-mission
+        // event.
+        let app = Gio.DesktopAppInfo.new('com.endlessm.Coding.Chatbox.desktop');
+        if (app) {
+            app.launch([], null);
+            this.game.startMission(name);
+            return;
+        }
+
+        throw new FailedToLaunchError('ChatBox is not installed. Install it from Software');
     }
 });
 
