@@ -4,9 +4,6 @@
   <template class="Gjs_DiscoveryCenterSearch" parent="GtkBox">
     <property name="visible">True</property>
     <property name="orientation">vertical</property>
-    <style>
-      <class name="app-chrome"/>
-    </style>
     <child>
       <object class="GtkBox">
         <property name="visible">True</property>
