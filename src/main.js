@@ -572,13 +572,71 @@ const DiscoveryCenterSearchResultsPage = new Lang.Class({
     }
 });
 
+const HOME_PAGE_CONTENT = {
+    "rows": [
+        {
+            "title": "Tutorials",
+            "children": [
+                "showmehow::terminal",
+                "chatbox::processing",
+                "showmehow::python"
+            ]
+        },
+        {
+            "title": "Examples",
+            "children": [
+                "chatbox::python::functions",
+                "chatbox::shell::extensions"
+            ]
+        },
+        {
+            "title": "Templates",
+            "children": [
+                "chatbox::codeview"
+            ]
+        }
+    ]
+};
+
+const DiscoveryCenterHomePage = new Lang.Class({
+    Name: 'DiscoveryCenterHomePage',
+    Extends: Gtk.Box,
+    Properties: {
+        services: GObject.ParamSpec.object('services',
+                                           '',
+                                           '',
+                                           GObject.ParamFlags.READWRITE |
+                                           GObject.ParamFlags.CONSTRUCT_ONLY,
+                                           DiscoveryCenterServicesBundle.$gtype)
+    },
+    Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/discovery-center-home-page.ui',
+    Children: [
+        'rows'
+    ],
+
+    _init: function(params) {
+        this.parent(params);
+
+        HOME_PAGE_CONTENT.rows.forEach(Lang.bind(this, function(row) {
+            let contentRow = new DiscoveryContentRow({
+                services: this.services,
+                title: row.title
+            }, row.children);
+
+            this.rows.add(contentRow);
+        }));
+    }
+});
+
 const CodingDiscoveryCenterMainWindow = new Lang.Class({
     Name: 'CodingDiscoveryCenterMainWindow',
     Extends: Gtk.ApplicationWindow,
     Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/main.ui',
     Children: [
+        'content-views',
+        'content-search-box',
         'search-results-box',
-        'content-search-box'
+        'home-page-box'
     ],
     Properties: {
         services: GObject.ParamSpec.object('services',
@@ -609,6 +667,10 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
         this.search_results_box.add(new DiscoveryCenterSearchResultsPage({
             visible: true,
             search_state: searchState,
+            services: this.services
+        }));
+        this.home_page_box.add(new DiscoveryCenterHomePage({
+            visible: true,
             services: this.services
         }));
     }

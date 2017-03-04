@@ -27,6 +27,18 @@
                 <property name="vexpand">True</property>
                 <property name="valign">fill</property>
                 <child>
+                  <object class="GtkBox" id="home-page-box">
+                    <property name="visible">True</property>
+                    <property name="vexpand">True</property>
+                    <property name="valign">fill</property>
+                    <property name="hexpand">True</property>
+                    <property name="halign">fill</property>
+                  </object>
+                  <packing>
+                    <property name="name">home</property>
+                  </packing>
+                </child>
+                <child>
                   <object class="GtkBox" id="search-results-box">
                     <property name="visible">True</property>
                     <property name="vexpand">True</property>

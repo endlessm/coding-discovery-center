@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk+" version="3.10"/>
+  <template class="Gjs_DiscoveryCenterHomePage" parent="GtkBox">
+    <property name="orientation">vertical</property>
+    <property name="hexpand">True</property>
+    <property name="halign">fill</property>
+    <child>
+      <object class="GtkBox" id="rows">
+        <property name="visible">True</property>
+        <property name="hexpand">True</property>
+        <property name="halign">fill</property>
+        <property name="vexpand">True</property>
+        <property name="valign">fill</property>
+        <property name="orientation">vertical</property>
+      </object>
+    </child>
+  </template>
+</interface>
