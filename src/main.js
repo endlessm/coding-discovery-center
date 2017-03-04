@@ -149,6 +149,26 @@ const Tags = [
     }
 ];
 
+const DiscoveryCenterServicesBundle = new Lang.Class({
+    Name: 'DiscoveryCenterServicesBundle',
+    Extends: GObject.Object,
+    Properties: {
+        game: GObject.ParamSpec.object('game',
+                                       '',
+                                       '',
+                                       GObject.ParamFlags.READWRITE |
+                                       GObject.ParamFlags.CONSTRUCT_ONLY,
+                                       Service.GameService.$gtype)
+    },
+
+    _init: function(params) {
+        this.parent(params);
+    },
+
+    startChatboxMission: function(name) {
+        this.game.startMission(name);
+    }
+});
 
 function load_style_sheet(resourcePath) {
     let provider = new Gtk.CssProvider();
@@ -446,28 +466,6 @@ const DiscoveryCenterSearch = new Lang.Class({
         this.content_search.connect('search-changed', Lang.bind(this, function() {
             this.state.updateSearchText(this.content_search.get_text());
         }));
-    }
-});
-
-
-const DiscoveryCenterServicesBundle = new Lang.Class({
-    Name: 'DiscoveryCenterServicesBundle',
-    Extends: GObject.Object,
-    Properties: {
-        game: GObject.ParamSpec.object('game',
-                                       '',
-                                       '',
-                                       GObject.ParamFlags.READWRITE |
-                                       GObject.ParamFlags.CONSTRUCT_ONLY,
-                                       Service.GameService.$gtype)
-    },
-
-    _init: function(params) {
-        this.parent(params);
-    },
-
-    startChatboxMission: function(name) {
-        this.game.startMission(name);
     }
 });
 
