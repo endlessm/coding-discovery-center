@@ -285,6 +285,15 @@ const DiscoveryContentItemView = new Lang.Class({
             visible: true,
             orientation: Gtk.Orientation.VERTICAL
         });
+        contentOverlayBox.get_style_context().add_class('overlay-contents');
+
+        let contentOverlayLabelsBox = new Gtk.Box({
+            visible: true,
+            orientation: Gtk.Orientation.VERTICAL,
+            vexpand: true,
+            hexpand: true,
+            valign: Gtk.Align.END
+        });
         let itemTitleLabel = new Gtk.Label({
             visible: true,
             label: this.model.title,
@@ -305,8 +314,10 @@ const DiscoveryContentItemView = new Lang.Class({
         itemTitleLabel.get_style_context().add_class('title');
         itemSubtitleLabel.get_style_context().add_class('subtitle');
 
-        contentOverlayBox.add(itemTitleLabel);
-        contentOverlayBox.add(itemSubtitleLabel);
+        contentOverlayLabelsBox.add(itemTitleLabel);
+        contentOverlayLabelsBox.add(itemSubtitleLabel);
+
+        contentOverlayBox.add(contentOverlayLabelsBox);
 
         contentOverlay.add(contentBox);
         contentOverlay.add_overlay(contentOverlayBox);
