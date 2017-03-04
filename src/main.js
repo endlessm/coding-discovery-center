@@ -350,37 +350,37 @@ const DiscoveryContentFlowBox = new Lang.Class({
     }
 });
 
-const CodingDiscoveryCenterMainWindow = new Lang.Class({
-    Name: 'CodingDiscoveryCenterMainWindow',
-    Extends: Gtk.ApplicationWindow,
-    Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/main.ui',
-    Children: [
-        'discovery-content-box',
-        'content-views',
-        'tag-selection-bar',
-        'content-search'
-    ],
-    Properties: {
-        discovery_content_store: GObject.ParamSpec.object('discovery-content-store',
-                                                          '',
-                                                          '',
-                                                          GObject.ParamFlags.READWRITE |
-                                                          GObject.ParamFlags.CONSTRUCT_ONLY,
-                                                          DiscoveryContentStore.$gtype),
-        game_service: GObject.ParamSpec.object('game-service',
-                                               '',
-                                               '',
-                                               GObject.ParamFlags.READWRITE |
-                                               GObject.ParamFlags.CONSTRUCT_ONLY,
-                                               Service.GameService.$gtype)
+
+const DiscoveryCenterSearchState = new Lang.Class({
+    Name: 'DiscoveryCenterSearchState',
+    Extends: GObject.Object,
+    Signals: {
+        'updated': {}
     },
 
-    // This callback is called when we need to update the items in
-    // the underlying flow box on this view. It is a member function
-    // since there is a substantial amount of internal state that
-    // we need to access.
-    _filterItems: function(child) {
-        let searchText = this.content_search.get_text();
+    _init: function(params) {
+        this.parent(params);
+        this._toggledTags = Set();  // eslint-disable-line no-undef
+        this._searchText = "";
+    },
+
+    addTag: function(tag) {
+        this._toggledTags.add(tag.name);
+        this.emit('updated');
+    },
+
+    removeTag: function(tag) {
+        this._toggledTags.delete(tag.name);
+        this.emit('updated');
+    },
+
+    updateSearchText: function(text) {
+        this._searchText = text;
+        this.emit('updated');
+    },
+
+    contentItemModelMatches: function(model) {
+        let searchText = this._searchText;
         let tags = [...this._toggledTags];
 
         // Quick check - if we don't have any tags or a search term
@@ -388,21 +388,130 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
         if (!tags.length && !searchText)
             return true;
 
-        let model_child = child.model;
         let matches_tags = true;
         let matches_search = true;
 
         // If we have tags, then check to see if the model_child
         // matches any
         if (tags.length)
-            matches_tags = model_child.matchesAnyOfProvidedTags(tags);
+            matches_tags = model.matchesAnyOfProvidedTags(tags);
 
         if (searchText)
-            matches_search = model_child.matchesSearchTerm(searchText);
+            matches_search = model.matchesSearchTerm(searchText);
 
         // XXX: Not sure if this should be an AND or OR operation
         // here (i.e do we expand or contract the list of results).
         return matches_tags && matches_search;
+    }
+
+});
+
+const DiscoveryCenterSearch = new Lang.Class({
+    Name: 'DiscoveryCenterSearch',
+    Extends: Gtk.Box,
+    Properties: {
+        'state': GObject.ParamSpec.object('state',
+                                          '',
+                                          '',
+                                          GObject.ParamFlags.READWRITE |
+                                          GObject.ParamFlags.CONSTRUCT_ONLY,
+                                          DiscoveryCenterSearchState.$gtype)
+    },
+    Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/discovery-center-search.ui',
+    Children: [
+        'content-search',
+        'tag-selection-bar'
+    ],
+
+    _init: function(params) {
+        this.parent(params);
+
+        Tags.forEach(Lang.bind(this, function(tag) {
+            let button = new Gtk.ToggleButton({
+                label: tag.title,
+                visible: true,
+                draw_indicator: true
+            });
+
+            button.connect('toggled', Lang.bind(this, function() {
+                if (button.active) {
+                    this.state.addTag(tag);
+                } else {
+                    this.state.removeTag(tag);
+                }
+            }));
+            this.tag_selection_bar.add(button);
+        }));
+
+        this.content_search.connect('search-changed', Lang.bind(this, function() {
+            this.state.updateSearchText(this.content_search.get_text());
+        }));
+    }
+});
+
+
+const DiscoveryCenterSearchResultsPage = new Lang.Class({
+    Name: 'DiscoveryCenterSearchResultsPage',
+    Extends: Gtk.Box,
+    Properties: {
+        game_service: GObject.ParamSpec.object('game-service',
+                                               '',
+                                               '',
+                                               GObject.ParamFlags.READWRITE |
+                                               GObject.ParamFlags.CONSTRUCT_ONLY,
+                                               Service.GameService.$gtype),
+        search_state: GObject.ParamSpec.object('search-state',
+                                               '',
+                                               '',
+                                               GObject.ParamFlags.READWRITE |
+                                               GObject.ParamFlags.CONSTRUCT_ONLY,
+                                               DiscoveryCenterSearchState.$gtype)
+    },
+
+    _init: function(params) {
+        this.parent(params);
+
+        // Include everything in the search results page, we'll filter it
+        // by the contents of the search bar
+        this._model = new DiscoveryContentStore(
+            {}, Object.keys(LessonContent).map(k => LessonContent[k])
+        );
+
+        this._flowBox = new DiscoveryContentFlowBox({
+            visible: true,
+            store: this._model
+        });
+        this.add(this._flowBox);
+
+        this.search_state.connect('updated', Lang.bind(this, function() {
+            this._flowBox.refilter(Lang.bind(this, function(child) {
+                return this.search_state.contentItemModelMatches(child.model);
+            }));
+        }));
+
+        this._flowBox.connect('child-activated', Lang.bind(this, function(box, child) {
+            child.model.performAction({
+                gameService: this.game_service
+            });
+        }));
+    }
+});
+
+const CodingDiscoveryCenterMainWindow = new Lang.Class({
+    Name: 'CodingDiscoveryCenterMainWindow',
+    Extends: Gtk.ApplicationWindow,
+    Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/main.ui',
+    Children: [
+        'discovery-content-box',
+        'content-search-box'
+    ],
+    Properties: {
+        game_service: GObject.ParamSpec.object('game-service',
+                                               '',
+                                               '',
+                                               GObject.ParamFlags.READWRITE |
+                                               GObject.ParamFlags.CONSTRUCT_ONLY,
+                                               Service.GameService.$gtype)
     },
 
     _init: function(params) {
@@ -415,41 +524,16 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
         });
         this.set_titlebar(header);
 
-        this._toggledTags = Set();  // eslint-disable-line no-undef
-
-        Tags.forEach(Lang.bind(this, function(tag) {
-            let button = new Gtk.ToggleButton({
-                label: tag.title,
-                visible: true,
-                draw_indicator: true
-            });
-
-            button.connect('toggled', Lang.bind(this, function() {
-                if (button.active) {
-                    this._toggledTags.add(tag.name);
-                    this._discoveryContent.refilter(Lang.bind(this, this._filterItems));
-                } else {
-                    this._toggledTags.delete(tag.name);
-                    this._discoveryContent.refilter(Lang.bind(this, this._filterItems));
-                }
-            }));
-            this.tag_selection_bar.add(button);
-        }));
-
-        this._discoveryContent = new DiscoveryContentFlowBox({
+        let searchState = new DiscoveryCenterSearchState({});
+        let searchBar = new DiscoveryCenterSearch({
             visible: true,
-            store: this.discovery_content_store
+            state: searchState
         });
-        this.discovery_content_box.add(this._discoveryContent);
 
-        this.content_search.connect('search-changed', Lang.bind(this, function() {
-            this._discoveryContent.refilter(Lang.bind(this, this._filterItems));
-        }));
-
-        this._discoveryContent.connect('child-activated', Lang.bind(this, function(box, child) {
-            child.model.performAction({
-                gameService: this.game_service
-            });
+        this.content_search_box.add(searchBar);
+        this.discovery_content_box.add(new DiscoveryCenterSearchResultsPage({
+            visible: true,
+            search_state: searchState
         }));
     }
 });
@@ -480,10 +564,7 @@ const CodingDiscoveryCenterApplication = new Lang.Class({
             let gameService = new Service.GameService({});
             this._mainWindow = new CodingDiscoveryCenterMainWindow({
                 application: this,
-                game_service: gameService,
-                discovery_content_store: new DiscoveryContentStore(
-                    {}, Object.keys(LessonContent).map(k => LessonContent[k])
-                )
+                game_service: gameService
             });
         }
 
