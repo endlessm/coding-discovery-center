@@ -27,7 +27,7 @@
                 <property name="vexpand">True</property>
                 <property name="valign">fill</property>
                 <child>
-                  <object class="GtkBox" id="discovery-content-box">
+                  <object class="GtkBox" id="search-results-box">
                     <property name="visible">True</property>
                     <property name="vexpand">True</property>
                     <property name="valign">fill</property>

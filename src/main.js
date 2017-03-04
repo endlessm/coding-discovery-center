@@ -502,7 +502,7 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
     Extends: Gtk.ApplicationWindow,
     Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/main.ui',
     Children: [
-        'discovery-content-box',
+        'search-results-box',
         'content-search-box'
     ],
     Properties: {
@@ -531,7 +531,7 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
         });
 
         this.content_search_box.add(searchBar);
-        this.discovery_content_box.add(new DiscoveryCenterSearchResultsPage({
+        this.search_results_box.add(new DiscoveryCenterSearchResultsPage({
             visible: true,
             search_state: searchState
         }));
