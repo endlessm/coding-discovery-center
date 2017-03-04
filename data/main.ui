@@ -18,14 +18,14 @@
           </object>
         </child>
         <child>
-          <object class="GtkStack" id="content-views">
+          <object class="GtkScrolledWindow">
             <property name="visible">True</property>
-            <property name="hexpand">True</property>
-            <property name="vexpand">True</property>
-            <property name="valign">fill</property>
             <child>
-              <object class="GtkScrolledWindow">
+              <object class="GtkStack" id="content-views">
                 <property name="visible">True</property>
+                <property name="hexpand">True</property>
+                <property name="vexpand">True</property>
+                <property name="valign">fill</property>
                 <child>
                   <object class="GtkBox" id="discovery-content-box">
                     <property name="visible">True</property>
