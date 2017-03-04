@@ -163,7 +163,7 @@ function load_style_sheet(resourcePath) {
 // and data, which is per-action defined.
 const _ACTION_DISPATCH = {
     'start-mission': function(services, data) {
-        services.gameService.startMission(data.name);
+        services.startChatboxMission(data.name);
     }
 };
 
@@ -450,16 +450,38 @@ const DiscoveryCenterSearch = new Lang.Class({
 });
 
 
+const DiscoveryCenterServicesBundle = new Lang.Class({
+    Name: 'DiscoveryCenterServicesBundle',
+    Extends: GObject.Object,
+    Properties: {
+        game: GObject.ParamSpec.object('game',
+                                       '',
+                                       '',
+                                       GObject.ParamFlags.READWRITE |
+                                       GObject.ParamFlags.CONSTRUCT_ONLY,
+                                       Service.GameService.$gtype)
+    },
+
+    _init: function(params) {
+        this.parent(params);
+    },
+
+    startChatboxMission: function(name) {
+        this.game.startMission(name);
+    }
+});
+
+
 const DiscoveryCenterSearchResultsPage = new Lang.Class({
     Name: 'DiscoveryCenterSearchResultsPage',
     Extends: Gtk.Box,
     Properties: {
-        game_service: GObject.ParamSpec.object('game-service',
-                                               '',
-                                               '',
-                                               GObject.ParamFlags.READWRITE |
-                                               GObject.ParamFlags.CONSTRUCT_ONLY,
-                                               Service.GameService.$gtype),
+        services: GObject.ParamSpec.object('services',
+                                           '',
+                                           '',
+                                           GObject.ParamFlags.READWRITE |
+                                           GObject.ParamFlags.CONSTRUCT_ONLY,
+                                           DiscoveryCenterServicesBundle.$gtype),
         search_state: GObject.ParamSpec.object('search-state',
                                                '',
                                                '',
@@ -490,9 +512,7 @@ const DiscoveryCenterSearchResultsPage = new Lang.Class({
         }));
 
         this._flowBox.connect('child-activated', Lang.bind(this, function(box, child) {
-            child.model.performAction({
-                gameService: this.game_service
-            });
+            child.model.performAction(this.services);
         }));
     }
 });
@@ -506,12 +526,12 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
         'content-search-box'
     ],
     Properties: {
-        game_service: GObject.ParamSpec.object('game-service',
-                                               '',
-                                               '',
-                                               GObject.ParamFlags.READWRITE |
-                                               GObject.ParamFlags.CONSTRUCT_ONLY,
-                                               Service.GameService.$gtype)
+        services: GObject.ParamSpec.object('services',
+                                           '',
+                                           '',
+                                           GObject.ParamFlags.READWRITE |
+                                           GObject.ParamFlags.CONSTRUCT_ONLY,
+                                           DiscoveryCenterServicesBundle.$gtype)
     },
 
     _init: function(params) {
@@ -533,7 +553,8 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
         this.content_search_box.add(searchBar);
         this.search_results_box.add(new DiscoveryCenterSearchResultsPage({
             visible: true,
-            search_state: searchState
+            search_state: searchState,
+            services: this.services
         }));
     }
 });
@@ -561,10 +582,12 @@ const CodingDiscoveryCenterApplication = new Lang.Class({
 
     vfunc_activate: function() {
         if (!this._mainWindow) {
-            let gameService = new Service.GameService({});
+            let servicesBundle = new DiscoveryCenterServicesBundle({
+                game: new Service.GameService({})
+            });
             this._mainWindow = new CodingDiscoveryCenterMainWindow({
                 application: this,
-                game_service: gameService
+                services: servicesBundle
             });
         }
 
