@@ -422,6 +422,17 @@ const DiscoveryCenterSearchState = new Lang.Class({
     Signals: {
         'updated': {}
     },
+    Properties: {
+        'active': GObject.ParamSpec.boolean('active',
+                                            '',
+                                            '',
+                                            GObject.ParamFlags.READABLE,
+                                            false)
+    },
+
+    get active() {
+        return !!(this._toggledTags.size || this._searchText.length);
+    },
 
     _init: function(params) {
         this.parent(params);
