@@ -370,6 +370,51 @@ const DiscoveryContentFlowBox = new Lang.Class({
     }
 });
 
+const DiscoveryContentRow = new Lang.Class({
+    Name: 'DiscoveryContentRow',
+    Extends: Gtk.Box,
+    Properties: {
+        'services': GObject.ParamSpec.object('services',
+                                             '',
+                                             '',
+                                             GObject.ParamFlags.READWRITE |
+                                             GObject.ParamFlags.CONSTRUCT_ONLY,
+                                             DiscoveryCenterServicesBundle.$gtype),
+        'title': GObject.ParamSpec.string('title',
+                                          '',
+                                          '',
+                                          GObject.ParamFlags.READWRITE |
+                                          GObject.ParamFlags.CONSTRUCT_ONLY,
+                                          '')
+    },
+    Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/discovery-content-row.ui',
+    Children: [
+        'title-label',
+        'content-box'
+    ],
+
+    _init: function(params, contentIds) {
+        this.parent(params);
+
+        let flowBox = new DiscoveryContentFlowBox({
+            visible: true,
+            store: new DiscoveryContentStore(
+                {},
+                Object.keys(LessonContent)
+                      .filter(k => contentIds.indexOf(k) !== -1)
+                      .map(k => LessonContent[k])
+            )
+        });
+
+        flowBox.connect('child-activated', Lang.bind(this, function(box, child) {
+            child.model.performAction(this.services);
+        }));
+
+        this.title_label.label = this.title;
+        this.content_box.add(flowBox);
+    }
+});
+
 
 const DiscoveryCenterSearchState = new Lang.Class({
     Name: 'DiscoveryCenterSearchState',

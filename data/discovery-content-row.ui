@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk+" version="3.10"/>
+  <template class="Gjs_DiscoveryContentRow" parent="GtkBox">
+    <property name="visible">True</property>
+    <property name="orientation">vertical</property>
+    <property name="hexpand">True</property>
+    <property name="halign">fill</property>
+    <property name="valign">start</property>
+    <property name="vexpand">False</property>
+    <style>
+      <class name="row"/>
+    </style>
+    <child>
+      <!-- First child is the title -->
+      <object class="GtkBox">
+        <property name="visible">True</property>
+        <property name="hexpand">True</property>
+        <property name="halign">fill</property>
+        <style>
+          <class name="header"/>
+        </style>
+        <child>
+          <object class="GtkLabel" id="title-label">
+            <property name="visible">True</property>
+            <property name="hexpand">True</property>
+            <property name="halign">start</property>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="GtkBox" id="content-box">
+        <property name="visible">True</property>
+        <property name="hexpand">True</property>
+        <property name="halign">fill</property>
+      </object>
+    </child>
+  </template>
+</interface>
