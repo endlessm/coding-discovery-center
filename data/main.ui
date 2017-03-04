@@ -9,9 +9,6 @@
       <object class="GtkBox">
         <property name="visible">True</property>
         <property name="orientation">vertical</property>
-        <style>
-          <class name="app-chrome"/>
-        </style>
         <child>
           <object class="GtkBox" id="content-search-box">
             <property name="visible">True</property>
@@ -20,6 +17,9 @@
         <child>
           <object class="GtkScrolledWindow">
             <property name="visible">True</property>
+            <style>
+              <class name="app-chrome"/>
+            </style>
             <child>
               <object class="GtkStack" id="content-views">
                 <property name="visible">True</property>
