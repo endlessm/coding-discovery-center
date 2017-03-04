@@ -225,6 +225,19 @@ const DiscoveryContentStore = new Lang.Class({
     }
 });
 
+const CSSAllocator = (function() {
+    let counter = 0;
+    return function(properties) {
+        let class_name = 'themed-widget-' + counter++;
+        return [class_name, '.' + class_name + ' { ' +
+        Object.keys(properties).map(function(key) {
+            return key.replace('_', '-') + ': ' + properties[key] + ';';
+        }).join(' ') + ' }'];
+    };
+})();
+
+const AVAILABLE_COLORS = ['black', 'blue', 'green', 'purple', 'orange'];
+
 const DiscoveryContentItemView = new Lang.Class({
     Name: 'DiscoveryContentItemView',
     Extends: Gtk.FlowBoxChild,
@@ -245,19 +258,60 @@ const DiscoveryContentItemView = new Lang.Class({
         this.action = action;
         this.tags = tags;
 
+        let contentOverlay = new Gtk.Overlay({
+            visible: true
+        });
+
         let contentBox = new Gtk.Box({
+            width_request: 200,
+            height_request: 200,
+            visible: true
+        });
+
+        let colorIndex = Math.floor((Math.random() * 10) % AVAILABLE_COLORS.length);
+
+        let contentBackgroundProvider = new Gtk.CssProvider();
+        let contentBackgroundStyleContext = contentBox.get_style_context();
+        let [className, backgroundCss] = CSSAllocator({
+            background_color: AVAILABLE_COLORS[colorIndex]
+        });
+        contentBackgroundProvider.load_from_data(backgroundCss);
+        contentBackgroundStyleContext.add_class(className);
+        contentBackgroundStyleContext.add_class('background-box');
+        contentBackgroundStyleContext.add_provider(contentBackgroundProvider,
+                                      Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+
+        let contentOverlayBox = new Gtk.Box({
             visible: true,
             orientation: Gtk.Orientation.VERTICAL
         });
-        contentBox.add(new Gtk.Label({
+        let itemTitleLabel = new Gtk.Label({
             visible: true,
-            label: this.model.title
-        }));
-        contentBox.add(new Gtk.Label({
+            label: this.model.title,
+            max_width_chars: 12,
+            hexpand: false,
+            halign: Gtk.Align.START,
+            xalign: 0
+        });
+        let itemSubtitleLabel = new Gtk.Label({
             visible: true,
-            label: this.model.subtitle
-        }));
-        this.add(contentBox);
+            label: this.model.subtitle,
+            max_width_chars: 40,
+            wrap: true,
+            hexpand: false,
+            halign: Gtk.Align.START,
+            xalign: 0
+        });
+        itemTitleLabel.get_style_context().add_class('title');
+        itemSubtitleLabel.get_style_context().add_class('subtitle');
+
+        contentOverlayBox.add(itemTitleLabel);
+        contentOverlayBox.add(itemSubtitleLabel);
+
+        contentOverlay.add(contentBox);
+        contentOverlay.add_overlay(contentOverlayBox);
+
+        this.add(contentOverlay);
 
         this.get_style_context().add_class('content-item');
     }
