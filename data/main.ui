@@ -35,7 +35,7 @@
                     <property name="halign">fill</property>
                   </object>
                   <packing>
-                    <property name="name">content</property>
+                    <property name="name">search</property>
                   </packing>
                 </child>
               </object>
