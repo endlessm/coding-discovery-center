@@ -5,6 +5,7 @@
     <file preprocess="xml-stripblanks">discovery-content-item-view.ui</file>
     <file preprocess="xml-stripblanks">discovery-content-flow-box.ui</file>
     <file preprocess="xml-stripblanks">discovery-center-search.ui</file>
+    <file preprocess="xml-stripblanks">discovery-center-search-results-page.ui</file>
     <file>application.css</file>
   </gresource>
 </gresources>

@@ -489,6 +489,7 @@ const DiscoveryCenterSearchResultsPage = new Lang.Class({
                                                GObject.ParamFlags.CONSTRUCT_ONLY,
                                                DiscoveryCenterSearchState.$gtype)
     },
+    Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/discovery-center-search-results-page.ui',
 
     _init: function(params) {
         this.parent(params);
