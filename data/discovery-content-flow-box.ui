@@ -5,7 +5,7 @@
     <property name="homogeneous">True</property>
     <property name="row-spacing">20</property>
     <property name="column-spacing">20</property>
-    <property name="halign">center</property>
+    <property name="halign">start</property>
     <property name="valign">start</property>
   </template>
 </interface>
