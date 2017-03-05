@@ -615,12 +615,6 @@ const DiscoveryContentRow = new Lang.Class({
     Name: 'DiscoveryContentRow',
     Extends: Gtk.Box,
     Properties: {
-        'services': GObject.ParamSpec.object('services',
-                                             '',
-                                             '',
-                                             GObject.ParamFlags.READWRITE |
-                                             GObject.ParamFlags.CONSTRUCT_ONLY,
-                                             DiscoveryCenterServicesBundle.$gtype),
         'title': GObject.ParamSpec.string('title',
                                           '',
                                           '',
@@ -633,6 +627,11 @@ const DiscoveryContentRow = new Lang.Class({
         'title-label',
         'content-box'
     ],
+    Signals: {
+        'activate-item': {
+            param_types: [ GObject.TYPE_OBJECT ]
+        }
+    },
 
     _init: function(params, contentIds) {
         this.parent(params);
@@ -646,16 +645,7 @@ const DiscoveryContentRow = new Lang.Class({
         });
 
         flowBox.connect('child-activated', Lang.bind(this, function(box, child) {
-            try {
-                child.model.performAction(this.services);
-            } catch (e) {
-                if (e instanceof FailedToLaunchError) {
-                    warnUnableToStartLesson(e.message);
-                    return;
-                }
-
-                throw e;
-            }
+            this.emit('activate-item', child.model);
         }));
 
         this.title_label.label = this.title;
@@ -778,12 +768,6 @@ const DiscoveryCenterSearchResultsPage = new Lang.Class({
     Name: 'DiscoveryCenterSearchResultsPage',
     Extends: Gtk.Box,
     Properties: {
-        services: GObject.ParamSpec.object('services',
-                                           '',
-                                           '',
-                                           GObject.ParamFlags.READWRITE |
-                                           GObject.ParamFlags.CONSTRUCT_ONLY,
-                                           DiscoveryCenterServicesBundle.$gtype),
         search_state: GObject.ParamSpec.object('search-state',
                                                '',
                                                '',
@@ -792,6 +776,11 @@ const DiscoveryCenterSearchResultsPage = new Lang.Class({
                                                DiscoveryCenterSearchState.$gtype)
     },
     Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/discovery-center-search-results-page.ui',
+    Signals: {
+        'activate-item': {
+            param_types: [ GObject.TYPE_OBJECT ]
+        }
+    },
 
     _init: function(params) {
         this.parent(params);
@@ -815,7 +804,7 @@ const DiscoveryCenterSearchResultsPage = new Lang.Class({
         }));
 
         this._flowBox.connect('child-activated', Lang.bind(this, function(box, child) {
-            child.model.performAction(this.services);
+            this.emit('activate-item', child.model);
         }));
     }
 });
@@ -865,12 +854,6 @@ const DiscoveryCenterCategoryPage = new Lang.Class({
     Name: 'DiscoveryCenterCategoryPage',
     Extends: Gtk.Box,
     Properties: {
-        services: GObject.ParamSpec.object('services',
-                                           '',
-                                           '',
-                                           GObject.ParamFlags.READWRITE |
-                                           GObject.ParamFlags.CONSTRUCT_ONLY,
-                                           DiscoveryCenterServicesBundle.$gtype),
         category: GObject.ParamSpec.string('category',
                                            '',
                                            '',
@@ -881,6 +864,11 @@ const DiscoveryCenterCategoryPage = new Lang.Class({
     Children: [
         'rows'
     ],
+    Signals: {
+        'activate-item': {
+            param_types: [ GObject.TYPE_OBJECT ]
+        }
+    },
 
     get category() {
         return this._category;
@@ -908,9 +896,11 @@ const DiscoveryCenterCategoryPage = new Lang.Class({
         let categoryContent = Categories[this._category];
         categoryContent.rows.forEach(Lang.bind(this, function(row) {
             let contentRow = new DiscoveryContentRow({
-                services: this.services,
                 title: row.title
             }, row.children);
+            contentRow.connect('activate-item', Lang.bind(this, function(row, item) {
+                this.emit('activate-item', item);
+            }));
 
             this.rows.add(contentRow);
         }));
@@ -920,19 +910,16 @@ const DiscoveryCenterCategoryPage = new Lang.Class({
 const DiscoveryCenterHomePage = new Lang.Class({
     Name: 'DiscoveryCenterHomePage',
     Extends: Gtk.Box,
-    Properties: {
-        services: GObject.ParamSpec.object('services',
-                                           '',
-                                           '',
-                                           GObject.ParamFlags.READWRITE |
-                                           GObject.ParamFlags.CONSTRUCT_ONLY,
-                                           DiscoveryCenterServicesBundle.$gtype)
-    },
     Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/discovery-center-home-page.ui',
     Children: [
         'carousel-box',
         'rows'
     ],
+    Signals: {
+        'activate-item': {
+            param_types: [ GObject.TYPE_OBJECT ]
+        }
+    },
 
     _init: function(params) {
         this.parent(params);
@@ -950,9 +937,11 @@ const DiscoveryCenterHomePage = new Lang.Class({
 
         HOME_PAGE_CONTENT.rows.forEach(Lang.bind(this, function(row) {
             let contentRow = new DiscoveryContentRow({
-                services: this.services,
                 title: row.title
             }, row.children);
+            contentRow.connect('activate-item', Lang.bind(this, function(row, item) {
+                this.emit('activate-item', item);
+            }));
 
             this.rows.add(contentRow);
         }));
@@ -963,16 +952,7 @@ const DiscoveryCenterHomePage = new Lang.Class({
         }));
 
         carousel.connect('activate-item', Lang.bind(this, function(carousel, item) {
-            try {
-                item.performAction(this.services);
-            } catch (e) {
-                if (e instanceof FailedToLaunchError) {
-                    warnUnableToStartLesson(e.message);
-                    return;
-                }
-
-                throw e;
-            }
+            this.emit('activate-item', item);
         }));
     }
 });
@@ -1041,19 +1021,37 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
         this.application.add_action(switchCategoryAction);
 
         this.content_search_box.add(searchBar);
-        this.search_results_box.add(new DiscoveryCenterSearchResultsPage({
+        let homePage = new DiscoveryCenterHomePage({
+            visible: true
+        });
+        let searchPage = new DiscoveryCenterSearchResultsPage({
             visible: true,
-            search_state: searchState,
-            services: this.services
-        }));
-        this.home_page_box.add(new DiscoveryCenterHomePage({
-            visible: true,
-            services: this.services
-        }));
-        this.category_box.add(new DiscoveryCenterCategoryPage({
-            visible: true,
-            services: this.services
-        }));
+            search_state: searchState
+        });
+        let categoryPage = new DiscoveryCenterCategoryPage({
+            visible: true
+        });
+
+        homePage.connect('activate-item', Lang.bind(this, this._activateItem));
+        searchPage.connect('activate-item', Lang.bind(this, this._activateItem));
+        categoryPage.connect('activate-item', Lang.bind(this, this._activateItem));
+
+        this.search_results_box.add(searchPage);
+        this.home_page_box.add(homePage);
+        this.category_box.add(categoryPage);
+    },
+
+    _activateItem: function(object, item) {
+        try {
+            item.performAction(this.services);
+        } catch (e) {
+            if (e instanceof FailedToLaunchError) {
+                warnUnableToStartLesson(e.message);
+                return;
+            }
+
+            throw e;
+        }
     }
 });
 
