@@ -127,12 +127,36 @@ const _LessonContent = [
     {
         name: 'GNOME',
         subtitle: 'The GNOME Platform',
-        tags: ['code'],
+        tags: ['code', 'gnome'],
         id: 'category::gnome',
         action: {
             name: 'switch-category',
             data: {
                 name: 'gnome'
+            }
+        }
+    },
+    {
+        name: 'GTK+ FAQ',
+        subtitle: 'FAQs for GTK+',
+        tags: ['code', 'gnome'],
+        id: 'web::gtk_faq',
+        action: {
+            name: 'open-url',
+            data: {
+                name: 'https://developer.gnome.org/gtk3/stable/gtk-question-index.html'
+            }
+        }
+    },
+    {
+        name: 'GNotification',
+        subtitle: 'Sending notifications using the GNOME platform',
+        tags: ['code', 'gnome'],
+        id: 'web::gnonitifcation_howdi',
+        action: {
+            name: 'open-url',
+            data: {
+                name: 'https://developer.gnome.org/GNotification/'
             }
         }
     }
