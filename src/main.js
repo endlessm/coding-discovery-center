@@ -23,6 +23,7 @@ const GLib = imports.gi.GLib;
 const Gtk = imports.gi.Gtk;
 
 const Lang = imports.lang;
+const Mainloop = imports.mainloop;
 
 const Service = imports.service;
 
@@ -258,6 +259,12 @@ function FailedToLaunchError(message) {
 }
 FailedToLaunchError.prototype = Error.prototype;
 
+function findLessonContentEntriesFor(contentIds) {
+    return Object.keys(LessonContent)
+                 .filter(k => contentIds.indexOf(k) !== -1)
+                 .map(k => LessonContent[k]);
+}
+
 const DiscoveryCenterServicesBundle = new Lang.Class({
     Name: 'DiscoveryCenterServicesBundle',
     Extends: GObject.Object,
@@ -324,6 +331,12 @@ const DiscoveryContentItem = new Lang.Class({
     Name: 'DiscoveryContentItem',
     Extends: GObject.Object,
     Properties: {
+        id: GObject.ParamSpec.string('id',
+                                     '',
+                                     '',
+                                     GObject.ParamFlags.READWRITE |
+                                     GObject.ParamFlags.CONSTRUCT_ONLY,
+                                     ''),
         title: GObject.ParamSpec.string('title',
                                         '',
                                         '',
@@ -384,6 +397,7 @@ const DiscoveryContentStore = new Lang.Class({
 
         contentItems.forEach(Lang.bind(this, function(item) {
             this.append(new DiscoveryContentItem({
+                id: item.id,
                 title: item.name,
                 subtitle: item.subtitle
             }, item.action, item.tags));
@@ -450,8 +464,101 @@ const DiscoveryContentItemView = new Lang.Class({
 
         this.item_title.label = this.model.title;
         this.item_subtitle.label = this.model.title;
+    }
+});
 
-        this.get_style_context().add_class('content-item');
+const DiscoveryContentCarouselItem = new Lang.Class({
+    Name: 'DiscoveryContentCarouselItem',
+    Extends: Gtk.Button,
+    Properties: {
+        model: GObject.ParamSpec.object('model',
+                                        '',
+                                        '',
+                                        GObject.ParamFlags.READWRITE |
+                                        GObject.ParamFlags.CONSTRUCT_ONLY,
+                                        DiscoveryContentItem.$gtype)
+    },
+    Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/discovery-content-carousel-item.ui',
+    Children: [
+        'background-content',
+        'item-title',
+        'item-subtitle'
+    ],
+
+    _init: function(params) {
+        this.parent(params);
+
+        let colorIndex = Math.floor((Math.random() * 10) % AVAILABLE_COLORS.length);
+
+        let contentBackgroundProvider = new Gtk.CssProvider();
+        let contentBackgroundStyleContext = this.background_content.get_style_context();
+        let [className, backgroundCss] = CSSAllocator({
+            background_color: AVAILABLE_COLORS[colorIndex]
+        });
+        contentBackgroundProvider.load_from_data(backgroundCss);
+        contentBackgroundStyleContext.add_class(className);
+        contentBackgroundStyleContext.add_provider(contentBackgroundProvider,
+                                      Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+
+        this.item_title.label = this.model.title;
+        this.item_subtitle.label = this.model.title;
+    }
+});
+
+const DiscoveryContentCarousel = new Lang.Class({
+    Name: 'DiscoveryContentCarousel',
+    Extends: Gtk.Stack,
+    Properties: {
+        store: GObject.ParamSpec.object('store',
+                                        '',
+                                        '',
+                                        GObject.ParamFlags.READWRITE |
+                                        GObject.ParamFlags.CONSTRUCT_ONLY,
+                                        DiscoveryContentStore.$gtype)
+    },
+    Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/discovery-content-carousel.ui',
+    Signals: {
+        'activate-item': {
+            param_types: [ GObject.TYPE_OBJECT ]
+        }
+    },
+
+    _init: function(params) {
+        this.parent(params);
+
+        this.store.forEach(Lang.bind(this, function(item) {
+            let view = new DiscoveryContentCarouselItem({
+                visible: true,
+                model: item
+            });
+            view.connect('clicked', Lang.bind(this, function() {
+                this.emit('activate-item', item);
+            }));
+
+            this.add_named(view, item.id);
+        }));
+
+        this._activeCarouselIndex = 0;
+    },
+
+    nextItem: function() {
+        if (this.store.get_n_items() === 0)
+            return;
+
+        this._activeCarouselIndex = ((this._activeCarouselIndex + 1) %
+                                     this.store.get_n_items());
+        let model = this.store.get_item(this._activeCarouselIndex);
+        this.set_visible_child_name(model.id);
+    },
+
+    prevItem: function() {
+        if (this.store.get_n_items() === 0)
+            return;
+
+        this._activeCarouselIndex = ((this._activeCarouselIndex - 1) %
+                                     this.store.get_n_items());
+        let model = this.store.get_item(this._activeCarouselIndex);
+        this.set_visible_child_name(model.id);
     }
 });
 
@@ -534,9 +641,7 @@ const DiscoveryContentRow = new Lang.Class({
             visible: true,
             store: new DiscoveryContentStore(
                 {},
-                Object.keys(LessonContent)
-                      .filter(k => contentIds.indexOf(k) !== -1)
-                      .map(k => LessonContent[k])
+                findLessonContentEntriesFor(contentIds)
             )
         });
 
@@ -716,6 +821,11 @@ const DiscoveryCenterSearchResultsPage = new Lang.Class({
 });
 
 const HOME_PAGE_CONTENT = {
+    'carousel': [
+        'showmehow::terminal',
+        'category::gnome',
+        'chatbox::python::functions'
+    ],
     'rows': [
         {
             'title': 'Categories',
@@ -748,6 +858,8 @@ const HOME_PAGE_CONTENT = {
         }
     ]
 };
+
+const SWITCH_CONTENT_TIME = 10;
 
 const DiscoveryCenterCategoryPage = new Lang.Class({
     Name: 'DiscoveryCenterCategoryPage',
@@ -818,11 +930,23 @@ const DiscoveryCenterHomePage = new Lang.Class({
     },
     Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/discovery-center-home-page.ui',
     Children: [
+        'carousel-box',
         'rows'
     ],
 
     _init: function(params) {
         this.parent(params);
+
+        let carousel = new DiscoveryContentCarousel({
+            store: new DiscoveryContentStore(
+                {},
+                findLessonContentEntriesFor(HOME_PAGE_CONTENT.carousel)
+            ),
+            visible: true,
+            vexpand: true,
+            valign: Gtk.Align.FILL
+        });
+        this.carousel_box.add(carousel);
 
         HOME_PAGE_CONTENT.rows.forEach(Lang.bind(this, function(row) {
             let contentRow = new DiscoveryContentRow({
@@ -831,6 +955,24 @@ const DiscoveryCenterHomePage = new Lang.Class({
             }, row.children);
 
             this.rows.add(contentRow);
+        }));
+
+        Mainloop.timeout_add_seconds(SWITCH_CONTENT_TIME, Lang.bind(this, function() {
+            carousel.nextItem();
+            return true;
+        }));
+
+        carousel.connect('activate-item', Lang.bind(this, function(carousel, item) {
+            try {
+                item.performAction(this.services);
+            } catch (e) {
+                if (e instanceof FailedToLaunchError) {
+                    warnUnableToStartLesson(e.message);
+                    return;
+                }
+
+                throw e;
+            }
         }));
     }
 });

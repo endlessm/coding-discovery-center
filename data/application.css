@@ -39,6 +39,36 @@
   padding: 10px
 }
 
+.carousel-item {
+  background-image: none;
+  border-width: 0px;
+  outline-width: 0px;
+  box-shadow: none;
+}
+
+.carousel-item .title {
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.carousel-item .subtitle {
+  font-weight: bold;
+  font-size: 80%;
+}
+
+.carousel-item .background-box {
+  border-radius: 4px;
+  box-shadow: inset 0 1px @theme_base_color, 0 1px 1px alpha(black,0.4);
+}
+
+.carousel-item .overlay-contents {
+  padding: 50px
+}
+
+.carousel-item overlay:hover {
+  background-image: linear-gradient(to bottom, #353c3e, #2e3436 60%, #2a2e30);
+}
+
 .row .header {
   font-weight: bold;
   font-size: 20pt;
