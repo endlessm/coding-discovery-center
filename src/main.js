@@ -348,6 +348,10 @@ const _ACTION_DISPATCH = {
     },
     'switch-category': function(services, data) {
         services.switchCategory(data.name);
+    },
+    'open-uri': function(services, data) {
+        let path = Gio.File.new_for_uri(data.uri);
+        path.query_default_handler(null).launch([path], null);
     }
 };
 
