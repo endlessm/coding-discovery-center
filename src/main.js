@@ -450,7 +450,7 @@ const AVAILABLE_COLORS = ['black', 'blue', 'green', 'purple', 'orange'];
 
 const DiscoveryContentItemView = new Lang.Class({
     Name: 'DiscoveryContentItemView',
-    Extends: Gtk.FlowBoxChild,
+    Extends: Gtk.Box,
     Properties: {
         model: GObject.ParamSpec.object('model',
                                         '',
@@ -466,49 +466,6 @@ const DiscoveryContentItemView = new Lang.Class({
         'item-subtitle'
     ],
 
-    _init: function(params, action, tags) {
-        params.width_request = 200;
-        params.height_request = 200;
-
-        this.parent(params);
-        this.action = action;
-        this.tags = tags;
-
-        let colorIndex = Math.floor((Math.random() * 10) % AVAILABLE_COLORS.length);
-
-        let contentBackgroundProvider = new Gtk.CssProvider();
-        let contentBackgroundStyleContext = this.background_content.get_style_context();
-        let [className, backgroundCss] = CSSAllocator({
-            background_color: AVAILABLE_COLORS[colorIndex]
-        });
-        contentBackgroundProvider.load_from_data(backgroundCss);
-        contentBackgroundStyleContext.add_class(className);
-        contentBackgroundStyleContext.add_provider(contentBackgroundProvider,
-                                      Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
-
-        this.item_title.label = this.model.title;
-        this.item_subtitle.label = this.model.title;
-    }
-});
-
-const DiscoveryContentCarouselItem = new Lang.Class({
-    Name: 'DiscoveryContentCarouselItem',
-    Extends: Gtk.Button,
-    Properties: {
-        model: GObject.ParamSpec.object('model',
-                                        '',
-                                        '',
-                                        GObject.ParamFlags.READWRITE |
-                                        GObject.ParamFlags.CONSTRUCT_ONLY,
-                                        DiscoveryContentItem.$gtype)
-    },
-    Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/discovery-content-carousel-item.ui',
-    Children: [
-        'background-content',
-        'item-title',
-        'item-subtitle'
-    ],
-
     _init: function(params) {
         this.parent(params);
 
@@ -529,9 +486,18 @@ const DiscoveryContentCarouselItem = new Lang.Class({
     }
 });
 
+const DiscoveryContentFlowBoxChildItem = new Lang.Class({
+    Name: 'DiscoveryContentFlowBoxChildItem',
+    Extends: Gtk.FlowBoxChild,
+    Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/discovery-content-flow-box-child-item.ui',
+    _init: function(params) {
+        this.parent(params);
+    }
+});
+
 const DiscoveryContentCarousel = new Lang.Class({
     Name: 'DiscoveryContentCarousel',
-    Extends: Gtk.Stack,
+    Extends: Gtk.Button,
     Properties: {
         store: GObject.ParamSpec.object('store',
                                         '',
@@ -541,6 +507,9 @@ const DiscoveryContentCarousel = new Lang.Class({
                                         DiscoveryContentStore.$gtype)
     },
     Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/discovery-content-carousel.ui',
+    Children: [
+        'content-stack'
+    ],
     Signals: {
         'activate-item': {
             param_types: [ GObject.TYPE_OBJECT ]
@@ -551,18 +520,24 @@ const DiscoveryContentCarousel = new Lang.Class({
         this.parent(params);
 
         this.store.forEach(Lang.bind(this, function(item) {
-            let view = new DiscoveryContentCarouselItem({
+            let view = new DiscoveryContentItemView({
                 visible: true,
                 model: item
             });
-            view.connect('clicked', Lang.bind(this, function() {
-                this.emit('activate-item', item);
-            }));
 
-            this.add_named(view, item.id);
+            // Make some slight display-related tweaks to the item view
+            view.item_title.halign = Gtk.Align.END;
+            view.item_subtitle.halign = Gtk.Align.END;
+            view.get_style_context().add_class('carousel-item');
+            this.content_stack.add_named(view, item.id);
         }));
 
         this._activeCarouselIndex = 0;
+
+        this.connect('clicked', Lang.bind(this, function() {
+            this.emit('activate-item',
+                      this.store.get_item(this._activeCarouselIndex));
+        }));
     },
 
     nextItem: function() {
@@ -572,7 +547,7 @@ const DiscoveryContentCarousel = new Lang.Class({
         this._activeCarouselIndex = ((this._activeCarouselIndex + 1) %
                                      this.store.get_n_items());
         let model = this.store.get_item(this._activeCarouselIndex);
-        this.set_visible_child_name(model.id);
+        this.content_stack.set_visible_child_name(model.id);
     },
 
     prevItem: function() {
@@ -582,7 +557,7 @@ const DiscoveryContentCarousel = new Lang.Class({
         this._activeCarouselIndex = ((this._activeCarouselIndex - 1) %
                                      this.store.get_n_items());
         let model = this.store.get_item(this._activeCarouselIndex);
-        this.set_visible_child_name(model.id);
+        this.content_stack.set_visible_child_name(model.id);
     }
 });
 
@@ -612,10 +587,14 @@ const DiscoveryContentFlowBox = new Lang.Class({
         //
         // For now we don't care about model updates, so just use forEach
         this.store.forEach(Lang.bind(this, function(item) {
-            this.add(new DiscoveryContentItemView({
+            let child = new DiscoveryContentFlowBoxChildItem({
+                visible: true
+            });
+            child.add(new DiscoveryContentItemView({
                 visible: true,
                 model: item
             }));
+            this.add(child);
         }));
 
         this._filterCallback = null;
@@ -669,7 +648,8 @@ const DiscoveryContentRow = new Lang.Class({
         });
 
         flowBox.connect('child-activated', Lang.bind(this, function(box, child) {
-            this.emit('activate-item', child.model);
+            let item = child.get_children()[0];
+            this.emit('activate-item', item.model);
         }));
 
         this.title_label.label = this.title;
@@ -823,12 +803,14 @@ const DiscoveryCenterSearchResultsPage = new Lang.Class({
 
         this.search_state.connect('updated', Lang.bind(this, function() {
             this._flowBox.refilter(Lang.bind(this, function(child) {
-                return this.search_state.contentItemModelMatches(child.model);
+                let item = child.get_children()[0];
+                return this.search_state.contentItemModelMatches(item.model);
             }));
         }));
 
         this._flowBox.connect('child-activated', Lang.bind(this, function(box, child) {
-            this.emit('activate-item', child.model);
+            let item = child.get_children()[0];
+            this.emit('activate-item', item.model);
         }));
     }
 });

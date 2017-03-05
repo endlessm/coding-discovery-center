@@ -1,8 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <requires lib="gtk+" version="3.10"/>
-  <template class="Gjs_DiscoveryContentCarousel" parent="GtkStack">
-    <property name="transition-type">crossfade</property>
-    <property name="transition-duration">400</property>
+  <template class="Gjs_DiscoveryContentCarousel" parent="GtkButton">
+    <style>
+      <class name="carousel"/>
+    </style>
+    <child>
+      <object class="GtkStack" id="content-stack">
+        <property name="visible">True</property>
+        <property name="transition-type">crossfade</property>
+        <property name="transition-duration">400</property>
+      </object>
+    </child>
   </template>
 </interface>
