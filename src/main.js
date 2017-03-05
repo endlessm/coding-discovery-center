@@ -142,9 +142,9 @@ const _LessonContent = [
         tags: ['code', 'gnome'],
         id: 'web::gtk_faq',
         action: {
-            name: 'open-url',
+            name: 'open-uri',
             data: {
-                name: 'https://developer.gnome.org/gtk3/stable/gtk-question-index.html'
+                uri: 'https://developer.gnome.org/gtk3/stable/gtk-question-index.html'
             }
         }
     },
@@ -154,9 +154,9 @@ const _LessonContent = [
         tags: ['code', 'gnome'],
         id: 'web::gnonitifcation_howdi',
         action: {
-            name: 'open-url',
+            name: 'open-uri',
             data: {
-                name: 'https://developer.gnome.org/GNotification/'
+                uri: 'https://developer.gnome.org/GNotification/'
             }
         }
     }
