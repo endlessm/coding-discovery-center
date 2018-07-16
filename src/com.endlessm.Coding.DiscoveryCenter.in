@@ -7,8 +7,10 @@
  * used to direct the user to various activities that they can perform
  * on their system.
  */
-imports.package.init({ name: "com.endlessm.Coding.DiscoveryCenter",
-                       version: "@PACKAGE_VERSION@",
-                       prefix: "@prefix@",
-                       libdir: "@libdir@" });
+imports.package.init({
+    name: 'com.endlessm.Coding.DiscoveryCenter',
+    version: '@PACKAGE_VERSION@',
+    prefix: '@prefix@',
+    libdir: '@libdir@',
+});
 imports.package.run(imports.main);
