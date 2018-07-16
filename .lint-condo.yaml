@@ -1,0 +1,2 @@
+linters:
+  - eslint . src/com.endlessm.Coding.DiscoveryCenter.in
