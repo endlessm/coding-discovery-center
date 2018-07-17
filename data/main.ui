@@ -9,48 +9,60 @@
       <object class="GtkBox">
         <property name="visible">True</property>
         <property name="orientation">vertical</property>
-        <style>
-          <class name="app-chrome"/>
-        </style>
         <child>
-          <object class="GtkBox">
+          <object class="GtkBox" id="content-search-box">
             <property name="visible">True</property>
-            <style>
-              <class name="toolbar"/>
-            </style>
-            <child>
-              <object class="GtkSearchEntry" id="content-search">
-                <property name="visible">True</property>
-                <property name="placeholder-text">What do you want to learn?</property>
-                <property name="width-request">300</property>
-              </object>
-            </child>
-            <child>
-              <object class="GtkBox" id="tag-selection-bar">
-                <property name="visible">True</property>
-                <style>
-                  <class name="tag-selection"/>
-                </style>
-              </object>
-            </child>
           </object>
         </child>
         <child>
-          <object class="GtkStack" id="content-views">
+          <object class="GtkScrolledWindow">
             <property name="visible">True</property>
-            <property name="hexpand">True</property>
-            <property name="vexpand">True</property>
-            <property name="valign">fill</property>
+            <style>
+              <class name="app-chrome"/>
+            </style>
             <child>
-              <object class="GtkFlowBox" id="discovery-content">
+              <object class="GtkStack" id="content-views">
                 <property name="visible">True</property>
-                <property name="homogeneous">True</property>
-                <property name="row-spacing">20</property>
-                <property name="column-spacing">20</property>
+                <property name="hexpand">True</property>
+                <property name="vexpand">True</property>
+                <property name="valign">fill</property>
+                <child>
+                  <object class="GtkBox" id="home-page-box">
+                    <property name="visible">True</property>
+                    <property name="vexpand">True</property>
+                    <property name="valign">fill</property>
+                    <property name="hexpand">True</property>
+                    <property name="halign">fill</property>
+                  </object>
+                  <packing>
+                    <property name="name">home</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkBox" id="search-results-box">
+                    <property name="visible">True</property>
+                    <property name="vexpand">True</property>
+                    <property name="valign">fill</property>
+                    <property name="hexpand">True</property>
+                    <property name="halign">fill</property>
+                  </object>
+                  <packing>
+                    <property name="name">search</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkBox" id="category-box">
+                    <property name="visible">True</property>
+                    <property name="vexpand">True</property>
+                    <property name="valign">fill</property>
+                    <property name="hexpand">True</property>
+                    <property name="halign">fill</property>
+                  </object>
+                  <packing>
+                    <property name="name">category</property>
+                  </packing>
+                </child>
               </object>
-              <packing>
-                <property name="name">content</property>
-              </packing>
             </child>
           </object>
         </child>

@@ -23,14 +23,16 @@ const GLib = imports.gi.GLib;
 const Gtk = imports.gi.Gtk;
 
 const Lang = imports.lang;
+const Mainloop = imports.mainloop;
 
 const Service = imports.service;
 
-const LessonContent = [
+const _LessonContent = [
     {
         name: 'Terminal',
         subtitle: 'Dig into the system',
         tags: ['poweruser', 'code', 'os', 'terminal'],
+        id: 'showmehow::terminal',
         action: {
             name: 'start-mission',
             data: {
@@ -42,6 +44,7 @@ const LessonContent = [
         name: 'Processing',
         subtitle: 'Code can be beautiful',
         tags: ['visual', 'code', 'processing'],
+        id: 'chatbox::processing',
         action: {
             name: 'start-mission',
             data: {
@@ -53,6 +56,7 @@ const LessonContent = [
         name: 'CodeView',
         subtitle: 'Sneak behind the screen',
         tags: ['javascript', 'code', 'os'],
+        id: 'chatbox::codeview',
         action: {
             name: 'start-mission',
             data: {
@@ -64,6 +68,7 @@ const LessonContent = [
         name: 'Python Console',
         subtitle: 'Use Python in the Terminal',
         tags: ['python', 'code', 'os', 'terminal'],
+        id: 'showmehow::python',
         action: {
             name: 'start-mission',
             data: {
@@ -75,6 +80,7 @@ const LessonContent = [
         name: 'Python Functions',
         subtitle: 'Write some functions and classes with Python',
         tags: ['python', 'code', 'editor'],
+        id: 'chatbox::python::functions',
         action: {
             name: 'start-mission',
             data: {
@@ -86,14 +92,142 @@ const LessonContent = [
         name: 'Shell extensions',
         subtitle: 'Customise your OS',
         tags: ['shell', 'code', 'os'],
+        id: 'chatbox::shell::extensions',
         action: {
             name: 'start-mission',
             data: {
                 name: 'shellextension'
             }
         }
+    },
+    {
+        name: 'Python',
+        subtitle: 'The Python Programming Language',
+        tags: ['shell', 'code', 'os'],
+        id: 'category::python',
+        action: {
+            name: 'switch-category',
+            data: {
+                name: 'python'
+            }
+        }
+    },
+    {
+        name: 'Endless OS',
+        subtitle: 'Endless OS',
+        tags: ['code', 'os'],
+        id: 'category::eos',
+        action: {
+            name: 'switch-category',
+            data: {
+                name: 'eos'
+            }
+        }
+    },
+    {
+        name: 'GNOME',
+        subtitle: 'The GNOME Platform',
+        tags: ['code', 'gnome'],
+        id: 'category::gnome',
+        action: {
+            name: 'switch-category',
+            data: {
+                name: 'gnome'
+            }
+        }
+    },
+    {
+        name: 'GTK+ FAQ',
+        subtitle: 'FAQs for GTK+',
+        tags: ['code', 'gnome'],
+        id: 'web::gtk_faq',
+        action: {
+            name: 'open-uri',
+            data: {
+                uri: 'https://developer.gnome.org/gtk3/stable/gtk-question-index.html'
+            }
+        }
+    },
+    {
+        name: 'GNotification',
+        subtitle: 'Sending notifications using the GNOME platform',
+        tags: ['code', 'gnome'],
+        id: 'web::gnonitifcation_howdi',
+        action: {
+            name: 'open-uri',
+            data: {
+                uri: 'https://developer.gnome.org/GNotification/'
+            }
+        }
     }
 ];
+
+const _Categories = [
+    {
+        name: 'None',
+        subtitle: 'If you see this page, it is an error',
+        tags: [],
+        id: 'none',
+        rows: []
+    },
+    {
+        name: 'Python',
+        subtitle: 'The Python Programming Language',
+        tags: ['python'],
+        id: 'python',
+        rows: [
+            {
+                title: 'Python Basics',
+                children: [
+                    'showmehow::python',
+                    'chatbox::python::functions'
+                ]
+            }
+        ]
+    },
+    {
+        name: 'Endless OS',
+        subtitle: 'Everything about Endless OS',
+        id: 'eos',
+        tags: ['os'],
+        rows: [
+            {
+                title: 'Make things with Code',
+                children: [
+                    'chatbox::codeview'
+                ]
+            }
+        ]
+    },
+    {
+        name: 'GNOME',
+        subtitle: 'The GNOME Platform',
+        id: 'gnome',
+        tags: ['code'],
+        rows: [
+            {
+                title: 'GNOME Core',
+                children: [
+                    'showmehow::terminal'
+                ]
+            }
+        ]
+    }
+];
+
+// Takes a list with each object-value having some key idKey
+// which uniquely identifies this element and then turns it into
+// a map that can be used for O(1) access.
+function _toFastLookupMap(list, idKey) {
+    let map = {};
+    list.forEach(function(element) {
+        map[element[idKey]] = element;
+    });
+    return map;
+}
+
+const LessonContent = _toFastLookupMap(_LessonContent, 'id');
+const Categories = _toFastLookupMap(_Categories, 'id');
 
 const Tags = [
     {
@@ -130,6 +264,72 @@ const Tags = [
     }
 ];
 
+function warnUnableToStartLesson(reason) {
+    let dialog = new Gtk.MessageDialog({
+        text: 'Unable to start this lesson',
+        secondary_text: reason,
+        buttons: Gtk.ButtonsType.OK
+    });
+    dialog.connect('response', function() {
+        dialog.destroy();
+    });
+    dialog.show();
+}
+
+function FailedToLaunchError(message) {
+    this.name = 'FailedToLaunchError';
+    this.message = message;
+    return this;
+}
+FailedToLaunchError.prototype = Error.prototype;
+
+function findLessonContentEntriesFor(contentIds) {
+    return Object.keys(LessonContent)
+                 .filter(k => contentIds.indexOf(k) !== -1)
+                 .map(k => LessonContent[k]);
+}
+
+const DiscoveryCenterServicesBundle = new Lang.Class({
+    Name: 'DiscoveryCenterServicesBundle',
+    Extends: GObject.Object,
+    Properties: {
+        game: GObject.ParamSpec.object('game',
+                                       '',
+                                       '',
+                                       GObject.ParamFlags.READWRITE |
+                                       GObject.ParamFlags.CONSTRUCT_ONLY,
+                                       Service.GameService.$gtype),
+        application: GObject.ParamSpec.object('application',
+                                              '',
+                                              '',
+                                              GObject.ParamFlags.READWRITE |
+                                              GObject.ParamFlags.CONSTRUCT_ONLY,
+                                              Gio.Application)
+    },
+
+    _init: function(params) {
+        this.parent(params);
+    },
+
+    startChatboxMission: function(name) {
+        // Launch the chatbox app, and then fire the start-mission
+        // event.
+        let app = Gio.DesktopAppInfo.new('com.endlessm.Coding.Chatbox.desktop');
+        if (app) {
+            app.launch([], null);
+            this.game.startMission(name);
+            return;
+        }
+
+        throw new FailedToLaunchError('ChatBox is not installed. Install it from Software');
+    },
+
+    switchCategory: function(name) {
+        // Switch the currently active category on the app.
+        this.application.activate_action('switch-category',
+                                         GLib.Variant.new('s', name));
+    }
+});
 
 function load_style_sheet(resourcePath) {
     let provider = new Gtk.CssProvider();
@@ -144,7 +344,14 @@ function load_style_sheet(resourcePath) {
 // and data, which is per-action defined.
 const _ACTION_DISPATCH = {
     'start-mission': function(services, data) {
-        services.gameService.startMission(data.name);
+        services.startChatboxMission(data.name);
+    },
+    'switch-category': function(services, data) {
+        services.switchCategory(data.name);
+    },
+    'open-uri': function(services, data) {
+        let path = Gio.File.new_for_uri(data.uri);
+        path.query_default_handler(null).launch([path], null);
     }
 };
 
@@ -152,6 +359,12 @@ const DiscoveryContentItem = new Lang.Class({
     Name: 'DiscoveryContentItem',
     Extends: GObject.Object,
     Properties: {
+        id: GObject.ParamSpec.string('id',
+                                     '',
+                                     '',
+                                     GObject.ParamFlags.READWRITE |
+                                     GObject.ParamFlags.CONSTRUCT_ONLY,
+                                     ''),
         title: GObject.ParamSpec.string('title',
                                         '',
                                         '',
@@ -186,13 +399,13 @@ const DiscoveryContentItem = new Lang.Class({
     matchesSearchTerm: function(searchTerm) {
         let lowerSearchTerm = searchTerm.toLowerCase();
         let tagMatchesSearchTerm = this._tags.some(Lang.bind(this, function(tag) {
-            return tag.indexOf(lowerSearchTerm) !== -1;
+            return tag.toLowerCase().indexOf(lowerSearchTerm) !== -1;
         }));
         let nameMatchesSearchTerm = (
-            this.title.indexOf(lowerSearchTerm) !== -1
+            this.title.toLowerCase().indexOf(lowerSearchTerm) !== -1
         );
         let subtitleMatchesSearchTerm = (
-            this.subtitle.indexOf(lowerSearchTerm) !== -1
+            this.subtitle.toLowerCase().indexOf(lowerSearchTerm) !== -1
         );
 
         return (tagMatchesSearchTerm ||
@@ -212,6 +425,7 @@ const DiscoveryContentStore = new Lang.Class({
 
         contentItems.forEach(Lang.bind(this, function(item) {
             this.append(new DiscoveryContentItem({
+                id: item.id,
                 title: item.name,
                 subtitle: item.subtitle
             }, item.action, item.tags));
@@ -225,9 +439,22 @@ const DiscoveryContentStore = new Lang.Class({
     }
 });
 
+const CSSAllocator = (function() {
+    let counter = 0;
+    return function(properties) {
+        let class_name = 'themed-widget-' + counter++;
+        return [class_name, '.' + class_name + ' { ' +
+        Object.keys(properties).map(function(key) {
+            return key.replace('_', '-') + ': ' + properties[key] + ';';
+        }).join(' ') + ' }'];
+    };
+})();
+
+const AVAILABLE_COLORS = ['black', 'blue', 'green', 'purple', 'orange'];
+
 const DiscoveryContentItemView = new Lang.Class({
     Name: 'DiscoveryContentItemView',
-    Extends: Gtk.FlowBoxChild,
+    Extends: Gtk.Box,
     Properties: {
         model: GObject.ParamSpec.object('model',
                                         '',
@@ -236,30 +463,507 @@ const DiscoveryContentItemView = new Lang.Class({
                                         GObject.ParamFlags.CONSTRUCT_ONLY,
                                         DiscoveryContentItem.$gtype)
     },
+    Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/discovery-content-item-view.ui',
+    Children: [
+        'background-content',
+        'item-title',
+        'item-subtitle'
+    ],
 
-    _init: function(params, action, tags) {
-        params.width_request = 200;
-        params.height_request = 200;
-
+    _init: function(params) {
         this.parent(params);
-        this.action = action;
-        this.tags = tags;
 
-        let contentBox = new Gtk.Box({
-            visible: true,
-            orientation: Gtk.Orientation.VERTICAL
+        let colorIndex = Math.floor((Math.random() * 10) % AVAILABLE_COLORS.length);
+
+        let contentBackgroundProvider = new Gtk.CssProvider();
+        let contentBackgroundStyleContext = this.background_content.get_style_context();
+        let [className, backgroundCss] = CSSAllocator({
+            background_color: AVAILABLE_COLORS[colorIndex]
         });
-        contentBox.add(new Gtk.Label({
-            visible: true,
-            label: this.model.title
-        }));
-        contentBox.add(new Gtk.Label({
-            visible: true,
-            label: this.model.subtitle
-        }));
-        this.add(contentBox);
+        contentBackgroundProvider.load_from_data(backgroundCss);
+        contentBackgroundStyleContext.add_class(className);
+        contentBackgroundStyleContext.add_provider(contentBackgroundProvider,
+                                      Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
 
-        this.get_style_context().add_class('content-item');
+        this.item_title.label = this.model.title;
+        this.item_subtitle.label = this.model.title;
+    }
+});
+
+const DiscoveryContentFlowBoxChildItem = new Lang.Class({
+    Name: 'DiscoveryContentFlowBoxChildItem',
+    Extends: Gtk.FlowBoxChild,
+    Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/discovery-content-flow-box-child-item.ui',
+    _init: function(params) {
+        this.parent(params);
+    }
+});
+
+const DiscoveryContentCarousel = new Lang.Class({
+    Name: 'DiscoveryContentCarousel',
+    Extends: Gtk.Button,
+    Properties: {
+        store: GObject.ParamSpec.object('store',
+                                        '',
+                                        '',
+                                        GObject.ParamFlags.READWRITE |
+                                        GObject.ParamFlags.CONSTRUCT_ONLY,
+                                        DiscoveryContentStore.$gtype)
+    },
+    Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/discovery-content-carousel.ui',
+    Children: [
+        'content-stack'
+    ],
+    Signals: {
+        'activate-item': {
+            param_types: [ GObject.TYPE_OBJECT ]
+        }
+    },
+
+    _init: function(params) {
+        this.parent(params);
+
+        this.store.forEach(Lang.bind(this, function(item) {
+            let view = new DiscoveryContentItemView({
+                visible: true,
+                model: item
+            });
+
+            // Make some slight display-related tweaks to the item view
+            view.item_title.halign = Gtk.Align.END;
+            view.item_subtitle.halign = Gtk.Align.END;
+            view.get_style_context().add_class('carousel-item');
+            this.content_stack.add_named(view, item.id);
+        }));
+
+        this._activeCarouselIndex = 0;
+
+        this.connect('clicked', Lang.bind(this, function() {
+            this.emit('activate-item',
+                      this.store.get_item(this._activeCarouselIndex));
+        }));
+    },
+
+    nextItem: function() {
+        if (this.store.get_n_items() === 0)
+            return;
+
+        this._activeCarouselIndex = ((this._activeCarouselIndex + 1) %
+                                     this.store.get_n_items());
+        let model = this.store.get_item(this._activeCarouselIndex);
+        this.content_stack.set_visible_child_name(model.id);
+    },
+
+    prevItem: function() {
+        if (this.store.get_n_items() === 0)
+            return;
+
+        this._activeCarouselIndex = ((this._activeCarouselIndex - 1) %
+                                     this.store.get_n_items());
+        let model = this.store.get_item(this._activeCarouselIndex);
+        this.content_stack.set_visible_child_name(model.id);
+    }
+});
+
+const DiscoveryContentFlowBox = new Lang.Class({
+    Name: 'DiscoveryContentFlowBox',
+    Extends: Gtk.FlowBox,
+    Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/discovery-content-flow-box.ui',
+    Properties: {
+        store: GObject.ParamSpec.object('store',
+                                        '',
+                                        '',
+                                        GObject.ParamFlags.READWRITE |
+                                        GObject.ParamFlags.CONSTRUCT_ONLY,
+                                        DiscoveryContentStore.$gtype)
+    },
+
+    _init: function(params) {
+        params.activate_on_single_click = false;
+        this.parent(params);
+
+        // XXX: For some reason discovery_content.bind_model doesn't seem to
+        // work. The callback gets invoked with null every time. Checked
+        // the bindings and there doesn't seem to be anything wrong there
+        // so either we are doing something wrong or there is a problem
+        // deep within Gjs. In any event, we want to use the filter func
+        // so we can't use bind_model anyway.
+        //
+        // For now we don't care about model updates, so just use forEach
+        this.store.forEach(Lang.bind(this, function(item) {
+            let child = new DiscoveryContentFlowBoxChildItem({
+                visible: true
+            });
+            child.add(new DiscoveryContentItemView({
+                visible: true,
+                model: item
+            }));
+            this.add(child);
+        }));
+
+        this._filterCallback = null;
+
+        this.set_filter_func(Lang.bind(this, function(child) {
+            if (this._filterCallback) {
+                return this._filterCallback(child);
+            }
+
+            return true;
+        }));
+    },
+
+    refilter: function(filterCallback) {
+        this._filterCallback = filterCallback;
+        this.invalidate_filter();
+    }
+});
+
+const DiscoveryContentRow = new Lang.Class({
+    Name: 'DiscoveryContentRow',
+    Extends: Gtk.Box,
+    Properties: {
+        'title': GObject.ParamSpec.string('title',
+                                          '',
+                                          '',
+                                          GObject.ParamFlags.READWRITE |
+                                          GObject.ParamFlags.CONSTRUCT_ONLY,
+                                          '')
+    },
+    Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/discovery-content-row.ui',
+    Children: [
+        'title-label',
+        'content-box'
+    ],
+    Signals: {
+        'activate-item': {
+            param_types: [ GObject.TYPE_OBJECT ]
+        }
+    },
+
+    _init: function(params, contentIds) {
+        this.parent(params);
+
+        let flowBox = new DiscoveryContentFlowBox({
+            visible: true,
+            store: new DiscoveryContentStore(
+                {},
+                findLessonContentEntriesFor(contentIds)
+            )
+        });
+
+        flowBox.connect('child-activated', Lang.bind(this, function(box, child) {
+            let item = child.get_children()[0];
+            this.emit('activate-item', item.model);
+        }));
+
+        this.title_label.label = this.title;
+        this.content_box.add(flowBox);
+    }
+});
+
+
+const DiscoveryCenterSearchState = new Lang.Class({
+    Name: 'DiscoveryCenterSearchState',
+    Extends: GObject.Object,
+    Signals: {
+        'updated': {}
+    },
+    Properties: {
+        'active': GObject.ParamSpec.boolean('active',
+                                            '',
+                                            '',
+                                            GObject.ParamFlags.READABLE,
+                                            false)
+    },
+
+    get active() {
+        return !!(this._toggledTags.size || this._searchText.length);
+    },
+
+    _init: function(params) {
+        this.parent(params);
+        this._toggledTags = Set();  // eslint-disable-line no-undef
+        this._searchText = '';
+    },
+
+    addTag: function(tag) {
+        this._toggledTags.add(tag.name);
+        this.emit('updated');
+    },
+
+    removeTag: function(tag) {
+        this._toggledTags.delete(tag.name);
+        this.emit('updated');
+    },
+
+    updateSearchText: function(text) {
+        this._searchText = text;
+        this.emit('updated');
+    },
+
+    contentItemModelMatches: function(model) {
+        let searchText = this._searchText;
+        let tags = [...this._toggledTags];
+
+        // Quick check - if we don't have any tags or a search term
+        // we can just skip the check alltogether
+        if (!tags.length && !searchText)
+            return true;
+
+        let matches_tags = true;
+        let matches_search = true;
+
+        // If we have tags, then check to see if the model_child
+        // matches any
+        if (tags.length)
+            matches_tags = model.matchesAnyOfProvidedTags(tags);
+
+        if (searchText)
+            matches_search = model.matchesSearchTerm(searchText);
+
+        // XXX: Not sure if this should be an AND or OR operation
+        // here (i.e do we expand or contract the list of results).
+        return matches_tags && matches_search;
+    }
+
+});
+
+const DiscoveryCenterSearch = new Lang.Class({
+    Name: 'DiscoveryCenterSearch',
+    Extends: Gtk.Box,
+    Properties: {
+        'state': GObject.ParamSpec.object('state',
+                                          '',
+                                          '',
+                                          GObject.ParamFlags.READWRITE |
+                                          GObject.ParamFlags.CONSTRUCT_ONLY,
+                                          DiscoveryCenterSearchState.$gtype)
+    },
+    Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/discovery-center-search.ui',
+    Children: [
+        'content-search',
+        'tag-selection-bar'
+    ],
+
+    _init: function(params) {
+        this.parent(params);
+
+        Tags.forEach(Lang.bind(this, function(tag) {
+            let button = new Gtk.ToggleButton({
+                label: tag.title,
+                visible: true,
+                draw_indicator: true
+            });
+
+            button.connect('toggled', Lang.bind(this, function() {
+                if (button.active) {
+                    this.state.addTag(tag);
+                } else {
+                    this.state.removeTag(tag);
+                }
+            }));
+            this.tag_selection_bar.add(button);
+        }));
+
+        this.content_search.connect('search-changed', Lang.bind(this, function() {
+            this.state.updateSearchText(this.content_search.get_text());
+        }));
+    }
+});
+
+
+const DiscoveryCenterSearchResultsPage = new Lang.Class({
+    Name: 'DiscoveryCenterSearchResultsPage',
+    Extends: Gtk.Box,
+    Properties: {
+        search_state: GObject.ParamSpec.object('search-state',
+                                               '',
+                                               '',
+                                               GObject.ParamFlags.READWRITE |
+                                               GObject.ParamFlags.CONSTRUCT_ONLY,
+                                               DiscoveryCenterSearchState.$gtype)
+    },
+    Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/discovery-center-search-results-page.ui',
+    Signals: {
+        'activate-item': {
+            param_types: [ GObject.TYPE_OBJECT ]
+        }
+    },
+
+    _init: function(params) {
+        this.parent(params);
+
+        // Include everything in the search results page, we'll filter it
+        // by the contents of the search bar
+        this._model = new DiscoveryContentStore(
+            {}, Object.keys(LessonContent).map(k => LessonContent[k])
+        );
+
+        this._flowBox = new DiscoveryContentFlowBox({
+            visible: true,
+            store: this._model
+        });
+        this.add(this._flowBox);
+
+        this.search_state.connect('updated', Lang.bind(this, function() {
+            this._flowBox.refilter(Lang.bind(this, function(child) {
+                let item = child.get_children()[0];
+                return this.search_state.contentItemModelMatches(item.model);
+            }));
+        }));
+
+        this._flowBox.connect('child-activated', Lang.bind(this, function(box, child) {
+            let item = child.get_children()[0];
+            this.emit('activate-item', item.model);
+        }));
+    }
+});
+
+const HOME_PAGE_CONTENT = {
+    'carousel': [
+        'showmehow::terminal',
+        'category::gnome',
+        'chatbox::python::functions'
+    ],
+    'rows': [
+        {
+            'title': 'Categories',
+            'children': [
+                'category::gnome',
+                'category::eos',
+                'category::python'
+            ]
+        },
+        {
+            'title': 'Tutorials',
+            'children': [
+                'showmehow::terminal',
+                'chatbox::processing',
+                'showmehow::python'
+            ]
+        },
+        {
+            'title': 'Examples',
+            'children': [
+                'chatbox::python::functions',
+                'chatbox::shell::extensions'
+            ]
+        },
+        {
+            'title': 'Templates',
+            'children': [
+                'chatbox::codeview'
+            ]
+        }
+    ]
+};
+
+const SWITCH_CONTENT_TIME = 10;
+
+const DiscoveryCenterCategoryPage = new Lang.Class({
+    Name: 'DiscoveryCenterCategoryPage',
+    Extends: Gtk.Box,
+    Properties: {
+        category: GObject.ParamSpec.string('category',
+                                           '',
+                                           '',
+                                           GObject.ParamFlags.READABLE,
+                                           'none')
+    },
+    Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/discovery-center-category-page.ui',
+    Children: [
+        'rows'
+    ],
+    Signals: {
+        'activate-item': {
+            param_types: [ GObject.TYPE_OBJECT ]
+        }
+    },
+
+    get category() {
+        return this._category;
+    },
+
+    _init: function(params) {
+        this.parent(params);
+        this.changeCategory('none');
+    },
+
+    changeCategory: function(category) {
+        if (Object.keys(Categories).indexOf(category) === -1) {
+            throw new Error('Category ' + category + ' does not exist');
+        }
+
+        this._category = category;
+
+        // First, drop all the existing content
+        this.rows.get_children().forEach(function(child) {
+            child.destroy();
+        });
+
+        // Now go through all the rows in this category and add
+        // them again.
+        let categoryContent = Categories[this._category];
+        categoryContent.rows.forEach(Lang.bind(this, function(row) {
+            let contentRow = new DiscoveryContentRow({
+                title: row.title
+            }, row.children);
+            contentRow.connect('activate-item', Lang.bind(this, function(row, item) {
+                this.emit('activate-item', item);
+            }));
+
+            this.rows.add(contentRow);
+        }));
+    }
+});
+
+const DiscoveryCenterHomePage = new Lang.Class({
+    Name: 'DiscoveryCenterHomePage',
+    Extends: Gtk.Box,
+    Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/discovery-center-home-page.ui',
+    Children: [
+        'carousel-box',
+        'rows'
+    ],
+    Signals: {
+        'activate-item': {
+            param_types: [ GObject.TYPE_OBJECT ]
+        }
+    },
+
+    _init: function(params) {
+        this.parent(params);
+
+        let carousel = new DiscoveryContentCarousel({
+            store: new DiscoveryContentStore(
+                {},
+                findLessonContentEntriesFor(HOME_PAGE_CONTENT.carousel)
+            ),
+            visible: true,
+            vexpand: true,
+            valign: Gtk.Align.FILL
+        });
+        this.carousel_box.add(carousel);
+
+        HOME_PAGE_CONTENT.rows.forEach(Lang.bind(this, function(row) {
+            let contentRow = new DiscoveryContentRow({
+                title: row.title
+            }, row.children);
+            contentRow.connect('activate-item', Lang.bind(this, function(row, item) {
+                this.emit('activate-item', item);
+            }));
+
+            this.rows.add(contentRow);
+        }));
+
+        Mainloop.timeout_add_seconds(SWITCH_CONTENT_TIME, Lang.bind(this, function() {
+            carousel.nextItem();
+            return true;
+        }));
+
+        carousel.connect('activate-item', Lang.bind(this, function(carousel, item) {
+            this.emit('activate-item', item);
+        }));
     }
 });
 
@@ -268,24 +972,19 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
     Extends: Gtk.ApplicationWindow,
     Template: 'resource:///com/endlessm/Coding/DiscoveryCenter/main.ui',
     Children: [
-        'discovery-content',
         'content-views',
-        'tag-selection-bar',
-        'content-search'
+        'content-search-box',
+        'search-results-box',
+        'category-box',
+        'home-page-box'
     ],
     Properties: {
-        discovery_content_store: GObject.ParamSpec.object('discovery-content-store',
-                                                          '',
-                                                          '',
-                                                          GObject.ParamFlags.READWRITE |
-                                                          GObject.ParamFlags.CONSTRUCT_ONLY,
-                                                          DiscoveryContentStore.$gtype),
-        game_service: GObject.ParamSpec.object('game-service',
-                                               '',
-                                               '',
-                                               GObject.ParamFlags.READWRITE |
-                                               GObject.ParamFlags.CONSTRUCT_ONLY,
-                                               Service.GameService.$gtype)
+        services: GObject.ParamSpec.object('services',
+                                           '',
+                                           '',
+                                           GObject.ParamFlags.READWRITE |
+                                           GObject.ParamFlags.CONSTRUCT_ONLY,
+                                           DiscoveryCenterServicesBundle.$gtype)
     },
 
     _init: function(params) {
@@ -298,79 +997,71 @@ const CodingDiscoveryCenterMainWindow = new Lang.Class({
         });
         this.set_titlebar(header);
 
-        // XXX: For some reason discovery_content.bind_model doesn't seem to
-        // work. The callback gets invoked with null every time. Checked
-        // the bindings and there doesn't seem to be anything wrong there
-        // so either we are doing something wrong or there is a problem
-        // deep within Gjs. In any event, we want to use the filter func
-        // so we can't use bind_model anyway.
+        let searchState = new DiscoveryCenterSearchState({});
+        let searchBar = new DiscoveryCenterSearch({
+            visible: true,
+            state: searchState
+        });
+
+        // Currently the way this works is that we show the search screen
+        // unless we have no currently active search term, at which point
+        // we go back to the home page.
         //
-        // For now we don't care about model updates, so just use forEach
-        this.discovery_content_store.forEach(Lang.bind(this, function(item) {
-            this.discovery_content.add(new DiscoveryContentItemView({
-                visible: true,
-                model: item,
-                valign: Gtk.Align.START,
-                halign: Gtk.Align.START
-            }));
+        // Perhaps in a future iteration we could have a more explicit
+        // interaction here.
+        searchState.connect('updated', Lang.bind(this, function() {
+            if (searchState.active) {
+                this.content_views.set_visible_child_name('search');
+            } else {
+                this.content_views.set_visible_child_name('home');
+            }
         }));
 
-        this._toggledTags = Set();  // eslint-disable-line no-undef
-
-        Tags.forEach(Lang.bind(this, function(tag) {
-            let button = new Gtk.ToggleButton({
-                label: tag.title,
-                visible: true,
-                draw_indicator: true
-            });
-
-            button.connect('toggled', Lang.bind(this, function() {
-                if (button.active) {
-                    this._toggledTags.add(tag.name);
-                    this.discovery_content.invalidate_filter();
-                } else {
-                    this._toggledTags.delete(tag.name);
-                    this.discovery_content.invalidate_filter();
-                }
-            }));
-            this.tag_selection_bar.add(button);
+        // Add a 'switch-category' action to the application
+        // which we will connect to and use to switch categories.
+        let switchCategoryAction = new Gio.SimpleAction({
+            name: 'switch-category',
+            parameter_type: new GLib.VariantType('s')
+        });
+        switchCategoryAction.connect('activate', Lang.bind(this, function(action, parameter) {
+            let page = this.content_views.get_child_by_name('category').get_children()[0];
+            page.changeCategory(parameter.unpack());
+            this.content_views.set_visible_child_name('category');
         }));
+        this.application.add_action(switchCategoryAction);
 
-        this.content_search.connect('search-changed', Lang.bind(this, function() {
-            this.discovery_content.invalidate_filter();
-        }));
+        this.content_search_box.add(searchBar);
+        let homePage = new DiscoveryCenterHomePage({
+            visible: true
+        });
+        let searchPage = new DiscoveryCenterSearchResultsPage({
+            visible: true,
+            search_state: searchState
+        });
+        let categoryPage = new DiscoveryCenterCategoryPage({
+            visible: true
+        });
 
-        this.discovery_content.connect('child-activated', Lang.bind(this, function(box, child) {
-            child.model.performAction({
-                gameService: this.game_service
-            });
-        }));
+        homePage.connect('activate-item', Lang.bind(this, this._activateItem));
+        searchPage.connect('activate-item', Lang.bind(this, this._activateItem));
+        categoryPage.connect('activate-item', Lang.bind(this, this._activateItem));
 
-        this.discovery_content.set_filter_func(Lang.bind(this, function(child) {
-            let searchText = this.content_search.get_text();
-            let tags = [...this._toggledTags];
+        this.search_results_box.add(searchPage);
+        this.home_page_box.add(homePage);
+        this.category_box.add(categoryPage);
+    },
 
-            // Quick check - if we don't have any tags or a search term
-            // we can just skip the check alltogether
-            if (!tags.length && !searchText)
-                return true;
+    _activateItem: function(object, item) {
+        try {
+            item.performAction(this.services);
+        } catch (e) {
+            if (e instanceof FailedToLaunchError) {
+                warnUnableToStartLesson(e.message);
+                return;
+            }
 
-            let model_child = child.model;
-            let matches_tags = true;
-            let matches_search = true;
-
-            // If we have tags, then check to see if the model_child
-            // matches any
-            if (tags.length)
-                matches_tags = model_child.matchesAnyOfProvidedTags(tags);
-
-            if (searchText)
-                matches_search = model_child.matchesSearchTerm(searchText);
-
-            // XXX: Not sure if this should be an AND or OR operation
-            // here (i.e do we expand or contract the list of results).
-            return matches_tags && matches_search;
-        }));
+            throw e;
+        }
     }
 });
 
@@ -383,7 +1074,7 @@ const CodingDiscoveryCenterApplication = new Lang.Class({
         this._mainWindow = null;
 
         this.parent({ application_id: pkg.name });
-        GLib.set_application_name(_("Coding Discovery Center"));
+        GLib.set_application_name(_('Coding Discovery Center'));
     },
 
     vfunc_startup: function() {
@@ -397,11 +1088,13 @@ const CodingDiscoveryCenterApplication = new Lang.Class({
 
     vfunc_activate: function() {
         if (!this._mainWindow) {
-            let gameService = new Service.GameService({});
+            let servicesBundle = new DiscoveryCenterServicesBundle({
+                game: new Service.GameService({}),
+                application: this
+            });
             this._mainWindow = new CodingDiscoveryCenterMainWindow({
                 application: this,
-                game_service: gameService,
-                discovery_content_store: new DiscoveryContentStore({}, LessonContent)
+                services: servicesBundle
             });
         }
 

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk+" version="3.10"/>
+  <template class="Gjs_DiscoveryContentItemView" parent="GtkBox">
+    <property name="hexpand">True</property>
+    <property name="halign">fill</property>
+    <property name="vexpand">True</property>
+    <property name="valign">fill</property>
+    <style>
+      <class name="content-item"/>
+    </style>
+    <child>
+      <object class="GtkOverlay">
+        <property name="visible">True</property>
+        <child>
+          <object class="GtkBox" id="background-content">
+            <property name="visible">True</property>
+            <property name="hexpand">True</property>
+            <property name="halign">fill</property>
+            <property name="vexpand">True</property>
+            <property name="valign">fill</property>
+            <style>
+              <class name="background-box"/>
+            </style>
+          </object>
+        </child>
+        <child type="overlay">
+          <object class="GtkBox">
+            <property name="visible">True</property>
+            <property name="orientation">vertical</property>
+            <style>
+              <class name="overlay-contents"/>
+            </style>
+            <child>
+              <object class="GtkBox">
+                <property name="visible">True</property>
+                <property name="orientation">vertical</property>
+                <property name="vexpand">True</property>
+                <property name="hexpand">True</property>
+                <property name="valign">end</property>
+                <child>
+                  <object class="GtkLabel" id="item-title">
+                    <property name="visible">True</property>
+                    <property name="max_width_chars">12</property>
+                    <property name="hexpand">False</property>
+                    <property name="halign">start</property>
+                    <property name="xalign">0</property>
+                    <style>
+                      <class name="title"/>
+                    </style>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="item-subtitle">
+                    <property name="visible">True</property>
+                    <property name="max_width_chars">40</property>
+                    <property name="hexpand">False</property>
+                    <property name="halign">start</property>
+                    <property name="xalign">0</property>
+                    <property name="wrap">True</property>
+                    <style>
+                      <class name="subtitle"/>
+                    </style>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="pass-through">True</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </template>
+</interface>
