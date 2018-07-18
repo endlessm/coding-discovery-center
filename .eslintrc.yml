@@ -1,3 +1,4 @@
+---
 env:
   es6: true
 extends: 'eslint:recommended'
@@ -129,11 +130,14 @@ rules:
   no-restricted-syntax:
     - error
     # Use ES6 classes rather than Lang.Class
-    - NewExpression > MemberExpression[object.name='Lang'][property.name='Class']
+    - "NewExpression > MemberExpression[object.name='Lang']\
+      [property.name='Class']"
     # Use arrow functions or Function.bind rather than Lang.bind
-    - CallExpression > MemberExpression[object.name='Lang'][property.name='bind']
+    - "CallExpression > MemberExpression[object.name='Lang']\
+      [property.name='bind']"
     # Use super rather than this.parent()
-    - CallExpression > MemberExpression[object.type='ThisExpression'][property.name='parent']
+    - "CallExpression > MemberExpression[object.type='ThisExpression']\
+      [property.name='parent']"
     # Use GLib timeouts rather than the mainloop module
     - MemberExpression[object.name='imports'][property.name='mainloop']
   no-return-assign: error
