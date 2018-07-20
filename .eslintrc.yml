@@ -4,7 +4,9 @@ env:
 extends: 'eslint:recommended'
 rules:
   accessor-pairs: error
-  array-bracket-newline: error
+  array-bracket-newline:
+    - error
+    - consistent
   array-bracket-spacing:
     - error
     - never
@@ -63,13 +65,11 @@ rules:
     - 4
     - MemberExpression: 'off'
   indent-legacy: error
-  init-declarations: error
   key-spacing: error
   keyword-spacing:
     - error
     - after: true
       before: true
-  line-comment-position: error
   linebreak-style:
     - error
     - unix
@@ -101,7 +101,11 @@ rules:
   no-extend-native: error
   no-extra-bind: error
   no-extra-label: error
-  no-extra-parens: error
+  no-extra-parens:
+    - error
+    - all
+    - conditionalAssign: false
+      returnAssign: false
   no-floating-decimal: error
   no-invalid-this: error
   no-iterator: error
@@ -110,7 +114,6 @@ rules:
   no-lone-blocks: error
   no-lonely-if: error
   no-loop-func: error
-  no-mixed-operators: error
   no-multi-assign: error
   no-multi-spaces:
     - error
@@ -168,9 +171,10 @@ rules:
   nonblock-statement-body-position:
     - error
     - below
-  object-curly-newline: 'off'
+  object-curly-newline:
+    - error
+    - consistent: true
   object-curly-spacing: error
-  object-property-newline: error
   object-shorthand: 'off'
   operator-assignment: error
   operator-linebreak: error
@@ -224,7 +228,6 @@ rules:
     - error
     - never
   valid-jsdoc: error
-  vars-on-top: error
   wrap-iife: error
   wrap-regex: error
   yield-star-spacing: error
