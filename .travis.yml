@@ -1,3 +1,4 @@
+---
 language: c  # actually javascript, but c is the basic environment
 sudo: required
 services:

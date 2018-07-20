@@ -1,0 +1,34 @@
+#!/usr/bin/env python3
+
+import argparse
+import os
+import subprocess
+import yaml
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-b', '--branch', default='master')
+parser.add_argument('-g', '--gitbranch', default='master')
+parser.add_argument('-t', '--run-tests', action='store_true')
+parser.add_argument('-e', '--export-bundle', action='store_true')
+args = parser.parse_args()
+
+with open('com.endlessm.Coding.DiscoveryCenter.yaml', 'r') as f:
+    manifest = yaml.load(f)
+
+manifest['branch'] = args.branch
+this_module = manifest['modules'][-1]
+this_module['sources'][-1]['commit'] = args.gitbranch
+this_module['run-tests'] = args.run_tests
+
+with open('manifest.yaml', 'w') as f:
+    yaml.dump(manifest, f)
+
+try:
+    subprocess.run(['flatpak-builder', 'build', '--force-clean', '--ccache',
+                    '--repo=repo', 'manifest.yaml'], check=True)
+    if args.export_bundle:
+        subprocess.run(['flatpak', 'build-bundle', 'repo',
+                        'com.endlessm.Coding.DiscoveryCenter.flatpak',
+                        'com.endlessm.Coding.DiscoveryCenter'], check=True)
+finally:
+    os.remove('manifest.yaml')
