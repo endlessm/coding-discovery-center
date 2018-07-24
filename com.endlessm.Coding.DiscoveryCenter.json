@@ -1,5 +1,5 @@
 {
-  "app_id": "com.endlessm.Coding.DiscoveryCenter",
+  "app-id": "com.endlessm.Coding.DiscoveryCenter",
   "runtime": "org.gnome.Platform",
   "runtime-version": 3.28,
   "branch": "master",
