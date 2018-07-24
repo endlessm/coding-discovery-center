@@ -21,7 +21,7 @@
         {
           "type": "git",
           "url": "https://github.com/endlessm/coding-game-service",
-          "commit": "T23089"
+          "commit": "master"
         }
       ]
     },
