@@ -1,0 +1,50 @@
+{
+  "app_id": "com.endlessm.Coding.DiscoveryCenter",
+  "runtime": "org.gnome.Platform",
+  "runtime-version": 3.28,
+  "branch": "master",
+  "sdk": "org.gnome.Sdk",
+  "command": "com.endlessm.Coding.DiscoveryCenter",
+  "finish-args": [
+    "--share=ipc",
+    "--socket=x11",
+    "--socket=wayland"
+  ],
+  "modules": [
+    {
+      "name": "coding-game-service",
+      "config-opts": [
+        "--disable-service",
+        "--disable-integration"
+      ],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/endlessm/coding-game-service",
+          "commit": "T23089"
+        }
+      ]
+    },
+    {
+      "name": "jasmine-gjs",
+      "cleanup": ["*"],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/ptomato/jasmine-gjs"
+        }
+      ]
+    },
+    {
+      "name": "coding-discovery-center",
+      "buildsystem": "meson",
+      "sources": [
+        {
+          "type": "git",
+          "path": ".",
+          "commit": "master"
+        }
+      ]
+    }
+  ]
+}
