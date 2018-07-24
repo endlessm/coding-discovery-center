@@ -18,7 +18,7 @@ with open('com.endlessm.Coding.DiscoveryCenter.json', 'r') as f:
 
 manifest['branch'] = args.branch
 this_module = manifest['modules'][-1]
-this_module['sources'][-1]['commit'] = args.gitbranch
+this_module['sources'][-1]['branch'] = args.gitbranch
 this_module['run-tests'] = args.run_tests
 
 with open('manifest.yaml', 'w') as f:

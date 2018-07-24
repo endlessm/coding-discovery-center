@@ -42,7 +42,7 @@
         {
           "type": "git",
           "path": ".",
-          "commit": "master"
+          "branch": "HEAD"
         }
       ]
     }
