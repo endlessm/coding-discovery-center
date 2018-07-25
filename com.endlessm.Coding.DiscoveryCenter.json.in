@@ -38,11 +38,12 @@
     {
       "name": "coding-discovery-center",
       "buildsystem": "meson",
+      "run-tests": "@RUN_TESTS@",
       "sources": [
         {
           "type": "git",
           "path": ".",
-          "branch": "HEAD"
+          "branch": "@GIT_CLONE_BRANCH@"
         }
       ]
     }

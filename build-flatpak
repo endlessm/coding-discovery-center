@@ -13,7 +13,7 @@ parser.add_argument('-e', '--export-bundle', action='store_true')
 args = parser.parse_args()
 
 # JSON is valid YAML
-with open('com.endlessm.Coding.DiscoveryCenter.json', 'r') as f:
+with open('com.endlessm.Coding.DiscoveryCenter.json.in', 'r') as f:
     manifest = yaml.load(f)
 
 manifest['branch'] = args.branch
